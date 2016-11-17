@@ -1,0 +1,20 @@
+Hello,
+If you make guidelab_paint.py available in Gimp, to be found under Image => Guides -> paint with guidelab
+after a Ctrl-N for a first empty picture (needed!) and activate it.
+Look at page 4: "Waehle Kacheln", here I would like to have the possibility to chose out of a list
+of items. 
+You can see what I mean using treeviewSelectSeveral.py as follows (after downloading it):
+Open the Python Console and paste the content of treeviewSelectSeveral.py into it.
+A Window will open where you select patterns, click, shift-click and ctrl-click work, pushing OK
+the result will occure in the Python Console :
+Two results e.g.:
+And the winners are... ['Kachel_1', 'Kachel_3', 'testpkhg']
+And the winners are... ['Kachel_1', 'Kachel_3', 'testpkhg', 'tile_2', 'tile_4', 'Amethyst']
+Those lists I want to use cyclically in what not yet possible but should be adde in UI page 
+"Simple path centured"
+
+Your help should be done around line 877 of guidelab_paint.py
+Or you may naturally show it to me in a Pygtk UI on a different plugin.
+
+Thanks in advance
+Peter
