@@ -15,3 +15,7 @@ MareroQ (gimpchat) created a plugin "Simple path shapes" , which is used to 'pai
 of guides, one type or random. Needs too a selection of them, e.g. playing-cards only (clubs, hearts, spades, diamonds)
 
 So I need help from people knowing to use Pygtk in gimp ... ;-) 
+
+In my newest Version , after a week trial and error, a lot of things became clear: e.g. how to select several
+items of a list at once ...
+Layout of the UI is and will be changed.
