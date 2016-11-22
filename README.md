@@ -19,3 +19,5 @@ So I need help from people knowing to use Pygtk in gimp ... ;-)
 In my newest Version , after a week trial and error, a lot of things became clear: e.g. how to select several
 items of a list at once ...
 Layout of the UI is and will be changed.
+
+On the way ... 22 nov 2016
