@@ -19,15 +19,24 @@
 #Version 2.02 direct choice of random simple shape and/ or there fill pattern random
 #Version 2.03 no global debu no_debug_output set to True 13 nov 1646 hours
 #gid 17-11-2016 https://github.com/PKHG/guidelab_paint.git
+#Version 3.0 new layout guidelab on page 0 , help, paint op page 2
+#Version 3.1 random shape fill working 27nov 1645 (PKHG local git!)
+#Version 3.2 random pattern fille working 27 nov 1711 (PKHG local git!)
+#version 3.2 repaired from error 27 nov 1711
+#version 3.2 seems ok 29 nov 1148
 import gimp
 import gimpplugin
 from gimpenums import *
 pdb = gimp.pdb
+import gobject
 import gtk
 import gimpui
 import _gimpui
 import os
 import sys
+
+debug_output = False
+
 sys.path.append(gimp.directory + "\\python_gtk")
 print(sys.path[-1])
 from time import time
@@ -35,7 +44,7 @@ from random import random
 from random import randint
 #global???!!!
 pattern_available = False
-no_debug_output = False
+
 def random_rgb():
     return(randint(0,255), randint(0,255), randint(0,255))
     ##return( (int(random() * 256), int(random() * 256), int(random() * 256)))
@@ -44,14 +53,14 @@ def random_rgb():
 def newline(x1,y1,x2,y2):
     return [x1,y1,x1,y1,x1,y1,x2,y2,x2,y2,x2,y2]
 
-def kreiseEllipse(image, mx, my, w, h, chan = 0, chosen_form = 'ellipse'):
+def kreiseEllipse(image, mx, my, w, h, operation= 0, chosen_form = 'ellipse'):
     debug(("L41 kreiseEllipse called",chosen_form))
     x = mx - w / 2
     y = my - h / 2
     if chosen_form == 'ellipse':
-        pdb.gimp_image_select_ellipse(image, chan, x, y, w, h)
+        pdb.gimp_image_select_ellipse(image, operation, x, y, w, h)
     else:
-        pdb.gimp_image_select_rectangle(image, chan, x, y, w, h)
+        pdb.gimp_image_select_rectangle(image, operation, x, y, w, h)
         
 
 class drawUi(object):
@@ -129,16 +138,19 @@ class drawUi(object):
         return lP
 ##########drawUi.py end
 
-def debug(val):
-    global no_debug_output
-    if no_debug_output:
+def debug(val, urgent = 0 ):
+    global debug_output
+    #gimp.message(" debug called")
+    if urgent > 0 :
+        gimp.message(str(val))
+    if not debug_output :
         return
     gimp.message(str(val))
 
 def debugErr(e):
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    debug(fname+'\n'+str(exc_tb.tb_lineno)+'\n'+str(e))
+    debug(fname+'\n'+str(exc_tb.tb_lineno)+'\n'+str(e), urgent = 1)
 
 #Globals???!!
 horizontal_guides = []
@@ -157,7 +169,7 @@ class Guidelabextra(object):
     ui = drawUi()
     #PKHG>???TODO patterSector = PatternSelector()
     #tabTits = [('Add/Edit'),('Help guide lab'),('Help guides_to_path'),('Simple Path centured')] #PKHG help added
-    tabTits = [('Add/Edit'),('Help guide lab'),('Help guides_to_path'),('Simple Path centured'),('Waehle Kacheln')] #PKHG help added
+    tabTits = [('Add/Edit'),('Help texts'),('Paint stuff'),('Simple Path centured'),('select several ...')] #PKHG help added
     tipPos = ("Position of the current guide, double click on the value to edit")
     tipPrev = ("Distance between this guide and the previous. If this guide is the 1st then this will be the distance to the start of the image.")
     tipNext=("Distance between this guide and the next. If this guide is the last then this will be distance to the end of the image.")
@@ -180,10 +192,44 @@ class Guidelabextra(object):
             self.showDialog()
         elif runmode == RUN_NONINTERACTIVE:
             return
-#### test bucketfill
 
-    def testproc(self,  *data):
-        debug(("L185 testproc",data))
+######## use of adjust
+    def next_adjust(self,adjust, object, startcol, startrow, framelabel = None):
+        if framelabel:
+            small_frame = gtk.Frame(framelabel)
+        else:
+            small_frame = gtk.Frame()
+        small_frame.add(object)
+        small_frame.show_all()
+        adjust.put(small_frame, startcol, startrow)
+        
+#### test bucketfill
+    def clear_selections(self, widget):
+        self.selected_items_shapes = []
+        self.selected_items_patterns = []
+        self.selected_items = []
+        debug(("L209", self.selected_items,self.selected_items_shapes, self.selected_items_patterns),1)
+        
+    def ok_clicked(self, widget):
+        #debug(("L191 ok_clicked called"),1)        
+        #OrIG self.treeview.get_selection().selected_foreach(foreach, selected)
+        tsSel = self.treeview.get_selection()
+        res0,res1 = tsSel.get_selected_rows()
+        debug(("L208 res0, ",res0),1)
+        debug(("L208 res1, ",res1),1)
+        self.selected_items = [el[1] for el in res1]
+        if res1[0][0] == 0 :
+            #self.selected_items.insert(0,"pattern")
+            self.selected_items_patterns = [el for el in self.selected_items]
+            dbgtmp = "patterns"
+        elif res1[0][0] == 1:
+            #self.selected_items.insert(0,"shapes")
+            self.selected_items_shapes = [el for el in self.selected_items]
+            dbgtmp = "shapes"
+        debug(("ok_clicked", dbgtmp, self.selected_items),1)
+        
+    def testproc(self, widget        ):
+        debug(("L185 testproc", widget     ))
         
 
     def fillbucket(self, teller, kachel, drawable, x, y, fill_mode = 0, paint_mode = 0, opacity = 100,
@@ -220,7 +266,7 @@ class Guidelabextra(object):
     def create_simple_pathes(self, widget, *data):
         #old version 1
         global horizontal_guides, vertical_guides
-        debug(("L220 data in create_simple_pathes"  , data ))
+        debug(("L220 data in create_simple_pathes"  , data ),1)
         horizontal_guides = []
         for n in self.tsH:
             horizontal_guides.append((n[0]))
@@ -229,7 +275,7 @@ class Guidelabextra(object):
             vertical_guides.append(n[0])
         number_of_intersections = len(horizontal_guides) * len(vertical_guides)
         if number_of_intersections == 0:
-            show_my_message("No intersections of guides available! Try again ;-) ")
+            self.show_my_message("No intersections of guides available! Try again ;-) ")
             return
         ellipse_or_rectangle = self.ellipse_or_rectangle.get_active()
         #PKHG>TODO10oct
@@ -262,23 +308,43 @@ class Guidelabextra(object):
                     x = drawable.width - 1
                 if y == drawable.height:
                     y = drawable.height - 1
-                kreiseEllipse(self.img, x, y, w, h, chan = 2,
+                kreiseEllipse(self.img, x, y, w, h, operation= 2,
                                   chosen_form = ellipse_or_rectangle)
                 if random_simple_pattern:
                     #pattern_list = pattern_list[]
+                    num_patterns, pattern_list = pdb.gimp_patterns_get_list('')
+                    #PKHG>23nov selected items
+                    if self.selected_items == []:
+                        debug(("L297 NO items chosen",self.selected_items),1)
+                    elif len(self.selected_items_patterns) > 0:
+                        debug(("l299, selected items =", self.selected_items),1)
+                        pattern_list = [pattern_list[el] for el in self.selected_items_patterns]
+                        num_patterns = len(pattern_list)
+                    #else:
+                    #    debug(("L302 only one choice"),1)
+                    
                     random_pattern = pattern_list[randint(0, num_patterns - 1)]
-                    debug(("L247 random pattern is ",len(pattern_list) == num_patterns, random_pattern))
+                    debug(("L326 random pattern is ",len(pattern_list) == num_patterns, random_pattern),1)
                     pdb.gimp_context_set_pattern(random_pattern)
                     take_this_pattern = random_pattern
-                    #self.pathoptions.set_active(count_shapes)
-                    #count_shapes = (1 + count_shapes) % 47
                 
                 else:
                     take_this_pattern = pdb.gimp_context_get_pattern()
                     debug(("L252 take_this_pattern = ", take_this_pattern))
 
                 if random_simple_shape:
-                    count_shapes = randint(0,46)
+                    debug(("L324 test simple random shapes",self.selected_items_shapes),1)
+                    if self.selected_items_shapes:
+                        nr_of_shapes = len(self.selected_items_shapes)
+                        if nr_of_shapes == 1:
+                            self.pathoptions.set_active(self.selected_items_shapes[0])
+                            count_shapes = self.selected_items_shapes[0]
+                        else:
+                            tmp = randint(0, nr_of_shapes - 1)
+                            count_shapes = self.selected_items_shapes[tmp]
+                    else:
+                        count_shapes = randint(0,46)
+                    debug(("L334 27nov  count_shapes", count_shapes),1)
                     self.pathoptions.set_active(count_shapes)
                     #count_shapes = pattern_list[randint(0,46)] #(1 + count_shapes) % 47
 
@@ -367,8 +433,14 @@ class Guidelabextra(object):
             ("<b>Height</b>, <b>height</b>, <b>H</b> or <b>h</b>:\n\tReplaced by the height of the current selected image")+"\n",
             "<b>"+("SAMPLES OF USAGE:")+"</b>",
             "\t"+("For add a guide on the vertical center:")+"<span foreground='blue' background='white'> <tt>h/2</tt> </span>",
-            "\t"+("For add a guide at 10 pixels of the bottom:")+"<span foreground='blue' background='white'> <tt>H-10</tt></span>",
-            "\t"+("For add a guide at 10 pixels of the center")+":<span foreground='blue' background='white'>  <tt>height/2+10</tt></span>"
+            "\t"+("For add a guide at 10 pixels of the bottom:")+
+            "<span foreground='blue' background='white'> <tt>H-10</tt></span>" + "\t"+("For add a guide at 10 pixels of the center")+
+            ":<span foreground='blue' background='white'>  <tt>height/2+10</tt></span>" +
+            ("\n\npushing the button <b>Path on Guides inside selections</b> creates a path") +
+            ("\nyou may stroke an available path with pencil and background-color") +
+                ("\nyou may opt for deleting the the active vextors") +"\n" +
+                ("<span foreground='blue' background='white'>You may have a selection active, then only guides INSIDE </span>"),
+                
         ]
         tx=""
         for line in msgs:
@@ -379,24 +451,7 @@ class Guidelabextra(object):
     def test_message(self, widget):
         if widget.get_name() == "test_button":
             self.show_my_message(widget.get_label()) #"Test button clicked")
-            
-    def tabHelp2(self, tab):
-        """
-        Content of third tab, help guides and strokes
-        """
-        msg2 = [("pushing the button <b>create_the_path</b> creates a path") ,
-                ("you may stroke an available path with pencil and background-color"),
-                ("you may opt for deleting the the active vextors") +"\n",
-                ("<span foreground='blue' background='white'>You may have a selection active, then only guides INSIDE </span>"),
-                ("<span foreground='blue' background='white'>will be used for a new path.</span>"),
-            ]
-        row = 0
-        tx = ""        
-        for line in msg2:
-            tx += line + "\n"
-            lb = self.ui.addRows(self.ui.addLabel(tx, 0, 0), tab, 5, 7, row, row + 1)
-            lb.set_use_markup(True)
-        
+
     def show_my_message(self, msg = "Hallo die Enten"):
         """
         Helper for popup message screens
@@ -497,7 +552,8 @@ class Guidelabextra(object):
         for n in range(0,len(ts)-1): ts[n][3]=int(ts[n+1][0])-int(ts[n][0])
         last=ts[len(ts)-1]
         last[3]=self.img.height-last[0] if name=="ts_h" else self.img.width-last[0]
-
+        #debug(("L506 printNext ts[0][0]", ts[0][0]), urgent = 1) #ts[0] is a TreeModelRow object, [:] impossible!
+        
     def delGuide(self, widget, row, col):
         tit=col.get_title()
         treeSt=widget.get_model()
@@ -603,7 +659,7 @@ class Guidelabextra(object):
         self.activeornot = self.checkynGUI.get_active()
         self.dialog.set_keep_above(self.activeornot)
             
-        if name == "create_the_path":
+        if name == "Path on Guides inside selections":
             layer = image.layers[0]
             self.python_guides_to_path_pkhg(image, layer)
         elif name == "create_new_layer":
@@ -669,62 +725,63 @@ class Guidelabextra(object):
         """
         try:
             row=0
-            self.ui.addRows(self.ui.addLabel(('H \nO\nR\nI\nZ\nO\nN\nT\nA\nL')), self.tabs[0], 0, 1, row, row+1)
-            self.ui.addRows(self.ui.addLabel(('V \nE\nR\nT\nI\nC\nA\nL')), self.tabs[0], 5, 6, row, row+1)
+            guidelab_tab = 0
+            self.ui.addRows(self.ui.addLabel(('H \nO\nR\nI\nZ\nO\nN\nT\nA\nL')), self.tabs[guidelab_tab], 0, 1, row, row+1)
+            self.ui.addRows(self.ui.addLabel(('V \nE\nR\nT\nI\nC\nA\nL')), self.tabs[guidelab_tab], 5, 6, row, row+1)
 
             self.tsH,tvh,sWh=self.addTV('h')
             self.tsV,tvv,sWv=self.addTV('v')
-            self.ui.addRows(sWh, self.tabs[0], 1, 5, row, row+1)
-            self.ui.addRows(sWv, self.tabs[0], 6, 10, row, row+1)
+            self.ui.addRows(sWh, self.tabs[guidelab_tab], 1, 5, row, row+1)
+            self.ui.addRows(sWv, self.tabs[guidelab_tab], 6, 10, row, row+1)
             row += 1
             #newAt=('New guide at')
             newAt=('Guide ')
             addOpposite=("Add an aditional guide on the oposite side")
             # horizontal
-            self.ui.addRows(self.ui.addLabel(newAt), self.tabs[0], 1, 2, row, row+1)
-            self.newH=self.ui.addRows(gtk.SpinButton(gtk.Adjustment(0, 0, self.img.height, 1), 0.0, 0), self.tabs[0], 2, 3, row, row+1,"activate",self.evalSpin)
+            self.ui.addRows(self.ui.addLabel(newAt), self.tabs[guidelab_tab], 1, 2, row, row+1)
+            self.newH=self.ui.addRows(gtk.SpinButton(gtk.Adjustment(0, 0, self.img.height, 1), 0.0, 0), self.tabs[guidelab_tab], 2, 3, row, row+1,"activate",self.evalSpin)
             self.newH.connect("focus-out-event",self.tt)
-            self.newHunit=self.ui.addRows(self.ui.makeCombo([['px',0],['%',1]]), self.tabs[0], 3, 4, row, row+1)
+            self.newHunit=self.ui.addRows(self.ui.makeCombo([['px',0],['%',1]]), self.tabs[guidelab_tab], 3, 4, row, row+1)
             self.ui.addTip(self.newH, self.newGuideTip)
 
-            self.ui.addRows(self.ui.addLabel("Replicate "), self.tabs[0], 1, 2, row+1, row+2)
+            self.ui.addRows(self.ui.addLabel("Replicate "), self.tabs[guidelab_tab], 1, 2, row+1, row+2)
             CORNERS=[[('None'),0],[('Mirror'),1],[('Perimeter'),2]]
-            self.cbH=self.ui.addRows(self.ui.makeCombo(CORNERS), self.tabs[0], 2, 4, row+1, row+2)
-            self.newHB=self.ui.addRows(gtk.Button('','Add'), self.tabs[0], 4, 5, row, row+2,"clicked",self.addH)
+            self.cbH=self.ui.addRows(self.ui.makeCombo(CORNERS), self.tabs[guidelab_tab], 2, 4, row+1, row+2)
+            self.newHB=self.ui.addRows(gtk.Button('','Add'), self.tabs[guidelab_tab], 4, 5, row, row+2,"clicked",self.addH)
 
-            self.ui.addRows(self.ui.addLabel(newAt), self.tabs[0], 6, 7, row, row+1)
-            self.newV=self.ui.addRows(gtk.SpinButton(gtk.Adjustment(0,0,self.img.width,1),0.0,0), self.tabs[0], 7, 8, row, row+1,"activate",self.evalSpin)
+            self.ui.addRows(self.ui.addLabel(newAt), self.tabs[guidelab_tab], 6, 7, row, row+1)
+            self.newV=self.ui.addRows(gtk.SpinButton(gtk.Adjustment(0,0,self.img.width,1),0.0,0), self.tabs[guidelab_tab], 7, 8, row, row+1,"activate",self.evalSpin)
             self.newV.connect("focus-out-event",self.tt)
-            self.newVunit=self.ui.addRows(self.ui.makeCombo([['px',0],['%',1],['aaa',2]]), self.tabs[0], 8, 9, row, row+1)
+            self.newVunit=self.ui.addRows(self.ui.makeCombo([['px',0],['%',1],['aaa',2]]), self.tabs[guidelab_tab], 8, 9, row, row+1)
 
-            self.ui.addRows(self.ui.addLabel("Replicate "), self.tabs[0], 6, 7, row+1, row+2)
+            self.ui.addRows(self.ui.addLabel("Replicate "), self.tabs[guidelab_tab], 6, 7, row+1, row+2)
             CORNERS=[[('None'),0],[('Mirror'),1],[('Perimeter'),2]]
-            self.cbV=self.ui.addRows(self.ui.makeCombo(CORNERS), self.tabs[0], 7, 9, row+1, row+2)
+            self.cbV=self.ui.addRows(self.ui.makeCombo(CORNERS), self.tabs[guidelab_tab], 7, 9, row+1, row+2)
             
-            self.newVB=self.ui.addRows(gtk.Button('',gtk.STOCK_ADD), self.tabs[0], 9, 10, row, row+2,"clicked",self.addV)
+            self.newVB=self.ui.addRows(gtk.Button('',gtk.STOCK_ADD), self.tabs[guidelab_tab], 9, 10, row, row+2,"clicked",self.addV)
             row += 1
             self.getGuides()
             row += 1
-            self.refresh=self.ui.addRows(gtk.Button(('Update manual changes')), self.tabs[0], 1, 5, row, row+1,'clicked',self.getGuides)
-            self.refresh=self.ui.addRows(gtk.Button(('Delete all guides')), self.tabs[0], 6, 10, row, row+1,'clicked',self.delGuides)
+            self.refresh=self.ui.addRows(gtk.Button(('Update manual changes')), self.tabs[guidelab_tab], 1, 5, row, row+1,'clicked',self.getGuides)
+            self.refresh=self.ui.addRows(gtk.Button(('Delete all guides')), self.tabs[guidelab_tab], 6, 10, row, row+1,'clicked',self.delGuides)
             self.refresh.connect('clicked',self.getGuides)
             row += 1
             infoSeveral = gtk.Label("several guides")
-            self.ui.addRows(infoSeveral, self.tabs[0], 0, 1, row, row + 1)
+            self.ui.addRows(infoSeveral, self.tabs[guidelab_tab], 0, 1, row, row + 1)
 
-            self.ui.addRows(gtk.Label("start"), self.tabs[0], 1, 2, row, row + 1)
+            self.ui.addRows(gtk.Label("start"), self.tabs[guidelab_tab], 1, 2, row, row + 1)
             self.startSpinButton = gtk.SpinButton(gtk.Adjustment(125, 0, self.img.width, 1), 0.0, 0)
             self.startSpinButton.set_name('start')
-            r01 = self.ui.addRows(self.startSpinButton, self.tabs[0], 2, 3, row, row+1,"activate", self.evalSpin)
-            self.ui.addRows(gtk.Label("step"), self.tabs[0], 3, 4, row, row + 1)
+            r01 = self.ui.addRows(self.startSpinButton, self.tabs[guidelab_tab], 2, 3, row, row+1,"activate", self.evalSpin)
+            self.ui.addRows(gtk.Label("step"), self.tabs[guidelab_tab], 3, 4, row, row + 1)
             self.stepSpinButton = gtk.SpinButton(gtk.Adjustment(250, 1, self.img.width, 1), 0.0, 0)
             self.stepSpinButton.set_name('step')
-            r02 = self.ui.addRows(self.stepSpinButton, self.tabs[0], 4, 5, row, row + 1,"activate", self.evalSpin)
-            self.ui.addRows(gtk.Label("amount"), self.tabs[0], 5, 6, row, row + 1)
+            r02 = self.ui.addRows(self.stepSpinButton, self.tabs[guidelab_tab], 4, 5, row, row + 1,"activate", self.evalSpin)
+            self.ui.addRows(gtk.Label("amount"), self.tabs[guidelab_tab], 5, 6, row, row + 1)
             self.amountSpinButton = gtk.SpinButton(gtk.Adjustment(2, 1, self.img.width, 1), 0.0, 0)
             self.amountSpinButton.set_name('amount')
-            self.r03 = self.ui.addRows(self.amountSpinButton, self.tabs[0], 6, 7, row, row + 1,"activate", self.evalSpin)
-            self.orientation = self.ui.addRows(self.ui.makeCombo([['horizontal',0],['vertical',1]]), self.tabs[0], 7, 8, row, row + 1)          
+            self.r03 = self.ui.addRows(self.amountSpinButton, self.tabs[guidelab_tab], 6, 7, row, row + 1,"activate", self.evalSpin)
+            self.orientation = self.ui.addRows(self.ui.makeCombo([['horizontal',0],['vertical',1]]), self.tabs[guidelab_tab], 7, 8, row, row + 1)          
             amount = int(self.amountSpinButton.get_value())
             #debug(amount)
             #res = self.orientation.get_active()
@@ -736,68 +793,92 @@ class Guidelabextra(object):
             #debug(tmpinfo)
             self.severalGuides = gtk.Button(tmpinfo) 
             self.severalGuides.set_name("severalGuides")
-            self.refresh = self.ui.addRows(self.severalGuides, self.tabs[0], 8, 9,
+            self.refresh = self.ui.addRows(self.severalGuides, self.tabs[guidelab_tab], 8, 9,
                                            row, row + 1, 'clicked' , self.call_plugin)
             row += 1
-            self.thisWindowOnTop = gtk.Label("This Gui always on Top?")
-            self.thisWindowOnTop.set_name("Gui_on_top")
-            self.refresh = self.ui.addRows(self.thisWindowOnTop, self.tabs[0], 0, 2,
-                                           row, row + 1)# 'clicked' , self.call_plugin)
-            self.checkynGUI = gtk.CheckButton("y/n")
-            self.ui.addRows(self.checkynGUI, self.tabs[0], 2,3, row, row + 1, 'clicked', self.call_plugin)
-
-            self.ui.addRows(gtk.Label("-------------------------------------"), self.tabs[0], 3, 10, row, row + 1)            
-
+            #self.thisWindowOnTop = gtk.Label("This Gui always on Top?")
+            #self.thisWindowOnTop.set_name("Gui_on_top")
+            #self.refresh = self.ui.addRows(self.thisWindowOnTop, self.tabs[guidelab_tab], 0, 2,
+            #                               row, row + 1)# 'clicked' , self.call_plugin)
             row += 1
-            self.wishGuides = gtk.Button("create_the_path")
-            self.wishGuides.set_name("create_the_path")
-            self.refresh = self.ui.addRows(self.wishGuides, self.tabs[0], 1, 5,
+            linesep1 = gtk.HSeparator()
+            self.ui.addRows(linesep1, self.tabs[guidelab_tab],0,10, row,row + 1)
+            row += 1
+            self.checkynGUI = gtk.CheckButton("This window always on top: y/n")
+            self.ui.addRows(self.checkynGUI, self.tabs[guidelab_tab], 2,4, row, row + 1, 'clicked', self.call_plugin)
+
+            #self.ui.addRows(gtk.Label("-------------------------------------"), self.tabs[guidelab_tab], 3, 10, row, row + 1)
+            row += 1
+            linesep1 = gtk.HSeparator()
+            self.ui.addRows(linesep1, self.tabs[guidelab_tab],0,10, row,row + 1)
+            row += 1
+            self.wishGuides = gtk.Button("Path on Guides inside selections")
+            self.wishGuides.set_name("Path on Guides inside selections")
+            self.refresh = self.ui.addRows(self.wishGuides, self.tabs[guidelab_tab], 1, 5,
                                            row, row + 1, 'clicked' , self.call_plugin)
             self.removeLabel = gtk.Label("remove vector")
             self.checkyn = gtk.CheckButton("y/n")
-            self.ui.addRows(self.removeLabel, self.tabs[0], 6, 7, row, row + 1)
-            self.ui.addRows(self.checkyn, self.tabs[0], 7, 8, row, row + 1, 'clicked', self.call_plugin)
+            self.ui.addRows(self.removeLabel, self.tabs[guidelab_tab], 6, 7, row, row + 1)
+            self.ui.addRows(self.checkyn, self.tabs[guidelab_tab], 7, 8, row, row + 1, 'clicked', self.call_plugin)
             self.strokeGuides = gtk.Button("stroke active Vector") 
             self.strokeGuides.set_name("stroke_guides")
-            self.refresh = self.ui.addRows(self.strokeGuides, self.tabs[0], 8, 9,
+            self.refresh = self.ui.addRows(self.strokeGuides, self.tabs[guidelab_tab], 8, 9,
                                            row, row + 1, 'clicked' , self.call_plugin)
             row += 1
-            self.newLabel = gtk.Label("Prepare width and height of selections, for intersection points, if wanted")
-            self.ui.addRows(self.newLabel, self.tabs[0], 0, 5, row, row + 1 )
-            row +=1
-            self.ui.addRows(gtk.Label("set width"), self.tabs[0], 0, 1, row, row + 1)
-            self.widthSpinButton = gtk.SpinButton(gtk.Adjustment(250, 2, self.img.width, 1), 0.0, 0)
-            self.widthSpinButton.set_name('widthEllipse')
-            r1 = self.ui.addRows(self.widthSpinButton, self.tabs[0], 1, 2, row, row+1,"activate", self.evalSpin)
-            self.ui.addRows(gtk.Label("set height"), self.tabs[0], 2, 3, row, row + 1)
-            self.heightSpinButton = gtk.SpinButton(gtk.Adjustment(250, 2, self.img.height, 1), 0.0, 0)
-            self.heightSpinButton.set_name('heightEllipse')
-            r2 = self.ui.addRows(self.heightSpinButton, self.tabs[0], 3, 4, row, row + 1,"activate", self.evalSpin)
-            self.ellipse_or_rectangle = self.ui.addRows(self.ui.makeCombo([['ellipse',0],['rectangle',1]]), self.tabs[0], 4, 5, row, row + 1)
-            
-            ellipseButton = gtk.Button("selection(s) at intersection(s)")
-            self.ui.addRows(ellipseButton, self.tabs[0], 5, 7  , row, row + 1, 'clicked', self.createellipses)
+            linesep1 = gtk.HSeparator()
+            self.ui.addRows(linesep1, self.tabs[guidelab_tab],0,10, row,row + 1)
 
+#######21bov PKHG>today 21nov start painttab (for now)
+            row = 0
+            paint_tab = 2
             row += 1
-            self.ui.addRows(gtk.Label("fill selections?!"), self.tabs[0], 0, 1, row, row + 1)
-            self.filltype = self.ui.addRows(self.ui.makeCombo([['no',0],['fg color',1],['centercolor',2],['pattern',3],['kacheln',4]]), self.tabs[0], 1, 2, row, row + 1)
-            self.ui.addRows(gtk.Label("opacity fill-bucket?!"), self.tabs[0], 2, 3, row, row + 1)
-            self.opacityforbucket = gtk.SpinButton(gtk.Adjustment(100, 0, 100, 5), 0.0, 0)
-            self.widthSpinButton.set_name('opacityforbucket')
-            r1 = self.ui.addRows(self.opacityforbucket, self.tabs[0], 3, 4, row, row+1,"activate", self.evalSpin)
-            self.ui.addRows(gtk.Label("random col. or pat.?!"), self.tabs[0], 4, 5, row, row + 1)
-            self.pattern_checkyn = gtk.CheckButton("y/n")
-            self.ui.addRows(self.pattern_checkyn, self.tabs[0], 5, 6, row, row + 1, 'clicked', self.call_plugin)
+            #self.newLabel = gtk.Label("Select ellipse or rectangle maybe width and height etc.")
+            #self.ui.addRows(self.newLabel, self.tabs[paint_tab], 3, 5, row, row + 1 )
+            #row += 1
             
-            row += 1
-            self.ui.addRows(gtk.Label("New layer"), self.tabs[0], 0, 1, row, row + 1)
-            self.new_layer = gtk.Button("OK: do now!")
-            self.new_layer.set_name("create_new_layer")
-            self.ui.addRows(self.new_layer, self.tabs[0], 1, 2 , row, row + 1, 'clicked', self.call_plugin)
+            #self.ui.addRows(self.newLabel, self.tabs[paint_tab], 0, 5, row, row + 1 )
+            #xrow += 1
+            #myframe the container for all paint options ...
+            myframe = gtk.Frame("Paint ellipse or rectangel on guide intersectionpoints ;-)")
+            
+            paint_adjust = gtk.Layout(hadjustment = None, vadjustment = None)
+            """
+            self.next_adjust(paint_adjust, gtk.Label("gaat dit"), 10 ,60)
+            self.next_adjust(paint_adjust, gtk.Label("gaat ditook"), 100, 60, "Hallo how are you?")
+            """
+            start_x = 10
+            self.ellipse_or_rectangle = self.ui.makeCombo([['ellipse',2],['rectangle',1]])
+            self.next_adjust(paint_adjust, self.ellipse_or_rectangle , start_x, 20,
+                             "Select ellipse or rectangle maybe width and height etc.")
+            self.widthSpinButton = gtk.SpinButton(gtk.Adjustment(250, 2, self.img.width, 1), 0.0, 0)
+            self.next_adjust(paint_adjust, self.widthSpinButton, start_x + 310, 20, "set width")
+            self.heightSpinButton = gtk.SpinButton(gtk.Adjustment(250, 2, self.img.height, 1), 0.0, 0)
+            self.next_adjust(paint_adjust,self.heightSpinButton, start_x + 380, 20, "set height")
+            
+            self.selection_type = self.ui.makeCombo([['no',0],['fg color',1],['centercolor',2],['pattern',3],['kacheln',4]])
+            self.next_adjust(paint_adjust, self.selection_type, start_x, 70,"choose filltype")
+            self.pattern_checkyn = gtk.CheckButton("y/n")
+            self.next_adjust(paint_adjust,self.pattern_checkyn, start_x + 100, 70, "random fg or pattern")
+
+            self.createnow_button = gtk.Button("OK, go!")
+            self.createnow_button.connect('clicked', self.createellipses)
+            self.next_adjust(paint_adjust, self.createnow_button, start_x + 310, 70,
+                             "create at guide intersections")
+            
+            paint_adjust.show()
+            #myframe.add(self.newLabel)
+            
+            myframe.add(paint_adjust)
+            self.ui.addRows(myframe, self.tabs[paint_tab], 0,1 , row, row + 1)
+            
+
+#################end paint - tab (for now)
 
             #PKHG>Simple path layout
             row = 0
-            self.ui.addRows(gtk.Label("Parameters of Use for 'Simple paths centured' 1.0 beta "), self.tabs[3], 1, 4, row, row + 1)
+            self.ui.addRows(gtk.Label("Size used, use 'Paint stuff' \
+                        others here:Parameters of Use for 'Simple paths centured' 1.0 beta "),
+                        self.tabs[3], 0, 4, row, row + 1)
             row += 1
             self.ui.addRows(gtk.Label("choose:"), self.tabs[3], 0, 1, row, row + 1)
             self.pathoptions = self.ui.addRows(self.ui.makeCombo(
@@ -821,8 +902,8 @@ class Guidelabextra(object):
 ]),self.tabs[3], 1, 2, row, row + 1)
 
             #not with pattern no_pattern_list = [1, 6, 13, 14, 36]
-            self.ui.addRows(gtk.Label("In selection?"), self.tabs[3], 2, 3, row, row + 1)
-            self.inselection_q = gtk.CheckButton("y/n")
+            #self.ui.addRows(gtk.Label("In selection?"), self.tabs[3], 2, 3, row, row + 1)
+            self.inselection_q = gtk.CheckButton("in selection(s) y/n?!")
             self.ui.addRows(self.inselection_q, self.tabs[3], 3, 4, row, row + 1, 'clicked', self.call_plugin)
 
             row += 1
@@ -872,15 +953,17 @@ class Guidelabextra(object):
 
             row += 1 
             final_simple_path_centered = gtk.Button("OK: do now!")
-            self.ui.addRows(final_simple_path_centered, self.tabs[3], 0, 4 , row, row + 1, 'clicked', self.create_simple_pathes) 
+            self.ui.addRows(final_simple_path_centered, self.tabs[3], 0, 4 , row, row + 1, 'clicked', self.create_simple_pathes)
 
 ################# please change here ##################
             row = 0
             test4 = 4
+            """
             num_patterns, mydata = pdb.gimp_patterns_get_list('')
             kanweg1 = gtk.Label(" label 1148 16 nov ")
-            test01 = self.ui.addRows(kanweg1, self.tabs[test4], 0, 1 , row, row + 1)
+            test01 = self.ui.addRows(kanweg1, self.tabs[test4], 1, 2 , row, row + 1)
             row += 1
+            """
 
 
 ################# end test tile for treeview #######################
@@ -891,36 +974,39 @@ class Guidelabextra(object):
         global horizontal_guides, vertical_guides
         
         self.img = gimp.image_list()[-1]
-        debug("L791 createellipses called")
+        debug("L1007 createellipses called", 1)
         horizontal_guides = []
         for n in self.tsH:
             horizontal_guides.append((n[0]))
         vertical_guides = []
         for n in self.tsV:
             vertical_guides.append(n[0])
+        debug(("L1013 should be done"))
         number_of_intersections = len(horizontal_guides) * len(vertical_guides)
+        debug(("L1014 number of intersections", number_of_intersections))
         ellipse_or_rectangle = self.ellipse_or_rectangle.get_active()
         if ellipse_or_rectangle == 0:
             ellipse_or_rectangle = 'ellipse'
         else:
             ellipse_or_rectangle = 'rectangle'
-            debug(("L801 ellipse_or_rectangle ", ellipse_or_rectangle))
+        debug(("L1020 ellipse_or_rectangle ", ellipse_or_rectangle),1)
         #debug((vertical_guides, horizontal_guides))
         if number_of_intersections == 0:
             self.show_my_message("no guide-intersection yet available")
             return
         #PKHG>premature end of this def, if no intersections available ;-( !!
         ftypes = ['no', 'fg color', 'centercolor', 'pattern', 'kacheln'] #PKHG>31oct pay attention!
-        tmp = self.filltype.get_active()
-        debug(("L816 active filltype" , tmp))      
-        filltype = ftypes[int(self.filltype.get_active())]
-        debug(("L815 filltype werd ", filltype))
+        debug(("L1028 createellipses"))
+        tmp = self.selection_type.get_active()
+        debug(("1028 active filltype" , tmp))      
+        filltype = ftypes[int(self.selection_type.get_active())]
+        debug(("L1032 filltype werd ", filltype))
         w = self.widthSpinButton.get_value()
         h = self.heightSpinButton.get_value()
         if filltype == 'no':
             for x in vertical_guides:
                 for y in horizontal_guides:
-                    kreiseEllipse(self.img, x, y, w, h, chan = 0, chosen_form = ellipse_or_rectangle)
+                    kreiseEllipse(self.img, x, y, w, h, operation= 0, chosen_form = ellipse_or_rectangle)
             #return
         elif filltype == 'fg color' or filltype == 'centercolor':
             drawable = self.img.layers[0]
@@ -933,7 +1019,7 @@ class Guidelabextra(object):
                     if y == drawable.height:
                         y = drawable.height - 1
                         
-                    kreiseEllipse(self.img, x, y, w, h, chan = 2,
+                    kreiseEllipse(self.img, x, y, w, h, operation= 2,
                                   chosen_form = ellipse_or_rectangle)
                     if filltype == 'centercolor':
                         #PKHH>orig num_channels, color = pdb.gimp_drawable_get_pixel(drawable, x, y)
@@ -969,7 +1055,7 @@ class Guidelabextra(object):
                         x = drawable.width - 1
                     if y == drawable.height:
                         y = drawable.height - 1
-                    kreiseEllipse(self.img, x, y, w, h, chan = 2,
+                    kreiseEllipse(self.img, x, y, w, h, operation= 2,
                                   chosen_form = ellipse_or_rectangle)
                     #pdb.gimp_edit_bucket_fill_full(drawable, fill_mode = 0 =foregroundcolor,
                     #paint_mode, opacity, threshold, sample_merged, fill_transparent, select_criterion, x, y)
@@ -1030,7 +1116,7 @@ class Guidelabextra(object):
                         x = drawable.width - 1
                     if y == drawable.height:
                         y = drawable.height - 1
-                    kreiseEllipse(self.img, x, y, w, h, chan = 2,
+                    kreiseEllipse(self.img, x, y, w, h, operation= 2,
                                   chosen_form = ellipse_or_rectangle)
                     take_this_kachel = chosen_names[randint(0,len(chosen_names) - 1)]
                     pdb.gimp_context_set_pattern(take_this_kachel)
@@ -1044,7 +1130,7 @@ class Guidelabextra(object):
                     
 
     def showDialog(self):
-        self.dialog = gimpui.Dialog("PTK Übung", "rotdlg")
+        self.dialog = gimpui.Dialog("Pygtk Menu", "rotdlg")
         self.dialog.set_position(gtk.WIN_POS_CENTER)
         self.table = gtk.Table(3, 1, False)
         self.table.set_homogeneous(False)
@@ -1056,11 +1142,91 @@ class Guidelabextra(object):
         self.ui.addRows(self.nB, self.table, 0, 1, 0, 1)
         #DBG gdk titel layout gimp.message("L408 Anzahl tabTits %2d" % (len(self.tabTits)))
         for n in range(0, len(self.tabTits)):
-            if n < 3:
+            if n < 4:
                 t = gtk.Table(6, 2, False)
-            else:
-                t = gtk.Table(7, 4, False)
-            t.set_homogeneous(False)
+            elif n == 4:
+                t = gtk.Table(2, 2, False)
+                self.selected_items = []
+                self.selected_items_shapes = []
+                self.selected_items_patterns = []
+                #frame = gtk.Frame("make your choices")
+                #frame.show()
+                #PKHG>25nov
+                self.mydata_shapes = ['Arrow', 'Axis of symmetry', 'Binoculars',
+                                          'Circle', 'Crescent', 'Cross',
+                                          'Diagonals', 'Diamond', 'Dodecagon',
+                                          'Ellipse', 'Flower 1 Out', 'Flower 2 In',
+                                          'GEAR', 'Grid rectangular (c) Ofnuts v0.0', 'Start Grid==',
+                                          'Mobius band', 'Octaagon', 'Pentagon',
+                                          'Pentagram', 'Petal (butterfly)', 'Pie 1/2',
+                                          'Pie 3/4 - 1/4', 'Pie 7/8 - 1/8', 'Playing cards Clubs',
+                                          'Playing cards Diamonds', 'Playing cards Hearts', 'Playing cards Spades',
+                                          'POLYGON', 'Protractor Inside circle', 'Start Protra',
+                                          'Quadrant', 'Quatrefoil', 'Rectangle',
+                                          'Recycle two arrows', 'Recycle three arrows', 'Roses compass',
+                                          'Percentage Ruler', 'Semicircle', 'Square',
+                                          'STAR', 'Star pentagons', 'Triangle equilateral',
+                                          'Triangle isosceles', 'Triangle Reuleaux', 'Trefoil',
+                                          'Yin-Yang', 'Wilber'] 
+                
+
+                num_patterns, self.mydata_pattern = pdb.gimp_patterns_get_list('')
+                self.treestore = gtk.TreeStore(str)
+                for parent in range(2):
+                    if parent == 0:
+                        piter = self.treestore.append(None, ['Patterns'])
+                        for child in range(len(self.mydata_pattern)):
+                            self.treestore.append(piter,[self.mydata_pattern[child]])
+                    elif parent == 1 :
+                        piter = self.treestore.append(None, ['Shapes'])
+                        for child in range(len(self.mydata_shapes)):
+                            self.treestore.append(piter,[self.mydata_shapes[child]])
+                self.treeview = gtk.TreeView(self.treestore)
+                self.tvcolumn = gtk.TreeViewColumn('Column 0')
+                self.treeview.append_column(self.tvcolumn)
+                # create a CellRendererText to render the data
+                self.cell = gtk.CellRendererText()
+                # add the cell to the tvcolumn and allow it to expand
+                self.tvcolumn.pack_start(self.cell, True)
+                # set the cell "text" attribute to column 0 - retrieve text
+                # from that column in treestore
+                self.tvcolumn.add_attribute(self.cell, 'text', 0)
+                self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+                
+                vbox = gtk.VBox(False,8) #PKHG>TODO what do this parameters mean?
+                vbox.set_border_width(5)
+                vbox.show()
+                label = gtk.Label('Select ONE or SEVERAL items out of the following list:')
+                label.show()
+                vbox.pack_start(label, gtk.FALSE, gtk.FALSE)
+                #PKHG>??? self.shape_or_pattern = self.ui.makeCombo([['pattern', 0],['shapes', 1]])
+                #PKHG>??? vbox.pack_start(self.shape_or_pattern, gtk.FALSE, gtk.FALSE)
+                sw = gtk.ScrolledWindow()
+                sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+                sw.set_policy(gtk.POLICY_NEVER,
+                              gtk.POLICY_AUTOMATIC)
+                vbox.pack_start(sw)
+                sw.add(self.treeview)
+                #frame.add(vbox)
+                
+               
+               
+                #second_vbox = gtk.VBox("clear selections")
+                clearbutton = gtk.Button("clear the selections done")
+                clearbutton.connect("clicked", self.clear_selections)
+                #clearbutton.show()
+                vbox.pack_end(clearbutton, gtk.FALSE)
+                #second_vbox.pack_end(clearbutton, gtk.FALSE)
+                #second_vbox.show()
+                button = gtk.Button('OK (simple shapes choices done?!)')
+                #button.show()
+                button.connect("clicked", self.ok_clicked)
+                vbox.pack_end(button,gtk.FALSE)
+                
+                vbox.show_all()                
+                t.attach(vbox, 0, 1, 0, 1)
+ 
+            #PKHG>NOT Needed if table has 3rd paramger False t.set_homogeneous(False)
             if n == 3 or n == 4:
                 t.set_row_spacings(0)
                 t.set_col_spacings(1)
@@ -1070,12 +1236,12 @@ class Guidelabextra(object):
             t.show()
             self.tabs.append(t)
             self.nB.append_page(self.tabs[n], gtk.Label(self.tabTits[n]))
-            #hier entstand self.tabs[0] und self.tabs[1] und self.tabs[2]
+            #hier entstand self.tabs[guidelab_tab] und self.tabs[1] und self.tabs[2]
         
         self.tabOne()
                 
         self.tabHelp(self.tabs[1])
-        self.tabHelp2(self.tabs[2])
+        #self.tabHelp2(self.tabs[2])
         
         self.dialog.vbox.hbox1 = gtk.HBox(False, 1)
         self.dialog.vbox.hbox1.show()
@@ -1086,7 +1252,7 @@ class Guidelabextra(object):
         cancel_button.connect("clicked", self.kobtn)
                 
         self.dialog.connect("expose-event",self.expose)
-        self.dialog.show()
+        #self.dialog.show()
         self.dialog.set_keep_above(False)   #better not always on top
         #PKHG>??? not used? ssw,ssh=self.dialog.get_size()
         self.dialog.run()
