@@ -21,3 +21,5 @@ items of a list at once ...
 Layout of the UI is and will be changed.
 
 On the way ... 22 nov 2016
+
+a lot is done ;-) . A sort of usermanual will be added soon.
