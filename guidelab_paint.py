@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # original from Arakne guide-lab   (
@@ -24,6 +25,15 @@
 #Version 3.2 random pattern fille working 27 nov 1711 (PKHG local git!)
 #version 3.2 repaired from error 27 nov 1711
 #version 3.2 seems ok 29 nov 1148
+#version 3.3 small name adjustments *_tab use rotated list of items 30 Nov TODO
+#layout for shapes adjusted patterns now in ONE line ...
+#1dec2016 cyclic use of simple shapes TODO 1204 1231 works OK
+#2dec warning if no choice of shapes is done and cyclic use is activated
+#version 3.4 rowwise or columwise paint shapes done 
+#version 3.5 4dec16:1134 no intersections shapes like original working done
+
+from collections import deque  #has a built in rotate d =deque(a_list) d.rotate(1), d has no slice
+
 import gimp
 import gimpplugin
 from gimpenums import *
@@ -54,7 +64,7 @@ def newline(x1,y1,x2,y2):
     return [x1,y1,x1,y1,x1,y1,x2,y2,x2,y2,x2,y2]
 
 def kreiseEllipse(image, mx, my, w, h, operation= 0, chosen_form = 'ellipse'):
-    debug(("L41 kreiseEllipse called",chosen_form))
+    debug(("L65 kreiseEllipse called",mx,my,w,h,operation,chosen_form),1 )
     x = mx - w / 2
     y = my - h / 2
     if chosen_form == 'ellipse':
@@ -179,9 +189,9 @@ class Guidelabextra(object):
     def __init__(self, runmode, img):
         self.img = img
         self.image_start_name = img.name
-        debug(("L62 __init__ called", self.image_start_name))  
+        debug(("L190 __init__ called", self.image_start_name))  
         #self_starting_img = self.img
-        #debug(("L160 *********** __init__",self.img,self_starting_img))
+        #debug(("L192 *********** __init__",self.img,self_starting_img))
         backgroundlayer = self.img.layers[-1]
         if not backgroundlayer.name.startswith("Background"):
             backgroundlayer.name = "Background orig= " + backgroundlayer.name
@@ -193,7 +203,7 @@ class Guidelabextra(object):
         elif runmode == RUN_NONINTERACTIVE:
             return
 
-######## use of adjust
+ ######## use of adjust
     def next_adjust(self,adjust, object, startcol, startrow, framelabel = None):
         if framelabel:
             small_frame = gtk.Frame(framelabel)
@@ -206,53 +216,57 @@ class Guidelabextra(object):
 #### test bucketfill
     def clear_selections(self, widget):
         self.selected_items_shapes = []
+        self.cyclic_shapes_deque = None
         self.selected_items_patterns = []
         self.selected_items = []
-        debug(("L209", self.selected_items,self.selected_items_shapes, self.selected_items_patterns),1)
+        debug(("L220", self.selected_items,self.selected_items_shapes, self.selected_items_patterns),1)
         
     def ok_clicked(self, widget):
-        #debug(("L191 ok_clicked called"),1)        
+        #debug(("L223 ok_clicked called"),1)        
         #OrIG self.treeview.get_selection().selected_foreach(foreach, selected)
         tsSel = self.treeview.get_selection()
         res0,res1 = tsSel.get_selected_rows()
-        debug(("L208 res0, ",res0),1)
-        debug(("L208 res1, ",res1),1)
+        debug(("L227 res0, ",res0),1)
+        debug(("L228 res1, ",res1),1)
         self.selected_items = [el[1] for el in res1]
         if res1[0][0] == 0 :
-            #self.selected_items.insert(0,"pattern")
+            #self.selected_items.insert(0,'patterns')
             self.selected_items_patterns = [el for el in self.selected_items]
-            dbgtmp = "patterns"
+            dbgtmp = 'patterns'
         elif res1[0][0] == 1:
             #self.selected_items.insert(0,"shapes")
             self.selected_items_shapes = [el for el in self.selected_items]
             dbgtmp = "shapes"
+            self.chosen_pattern = deque(self.selected_items_shapes)
+            self.cyclic_shapes_deque = deque(self.chosen_pattern)
+
         debug(("ok_clicked", dbgtmp, self.selected_items),1)
         
     def testproc(self, widget        ):
-        debug(("L185 testproc", widget     ))
+        debug(("L244 testproc", widget     ))
         
 
     def fillbucket(self, teller, kachel, drawable, x, y, fill_mode = 0, paint_mode = 0, opacity = 100,
                    threshold = 128, sample_merged = False, fill_transparent = False,
                    select_criterion = 0, color = (255,0,0)):
-        debug(("L175 fillbucket called,x,y,tel fill_mode  " , x, y, teller, fill_mode, kachel))
+        debug(("L250 fillbucket called,x,y,tel fill_mode  " , x, y, teller, fill_mode, kachel))
         
         if opacity > 100:
             opacity = 100
         if fill_mode == 2:
             num_patterns, pattern_list = pdb.gimp_patterns_get_list('^tile')
-            debug(("L180 fillpattern pattenr name", kachel))
+            debug(("L256 fillpattern pattenr name", kachel))
             if kachel <> 'random':
                 pdb.gimp_context_set_pattern(kachel)
                 pdb.gimp_patterns_refresh()
             else:
                 fill_mode = 0 #for foreground color!
-            debug(("L178 fillbucker pattern_name", kachel))
+            debug(("L262 fillbucker pattern_name", kachel))
         elif fill_mode == 999: #use pattern!
             fill_mode = 2
             pdb.gimp_context_set_pattern(kachel)
             pdb.gimp_patterns_refresh()
-            debug(("L188 fillbucker pattern_name", kachel))
+            debug(("L267 fillbucker pattern_name", kachel))
         elif fill_mode == 1000: #centercolor to be used!
             fill_mode = 2
         pdb.gimp_context_set_foreground(color)
@@ -266,7 +280,7 @@ class Guidelabextra(object):
     def create_simple_pathes(self, widget, *data):
         #old version 1
         global horizontal_guides, vertical_guides
-        debug(("L220 data in create_simple_pathes"  , data ),1)
+        debug(("L281 data in create_simple_pathes", data ),1)
         horizontal_guides = []
         for n in self.tsH:
             horizontal_guides.append((n[0]))
@@ -274,14 +288,26 @@ class Guidelabextra(object):
         for n in self.tsV:
             vertical_guides.append(n[0])
         number_of_intersections = len(horizontal_guides) * len(vertical_guides)
+        #OK>kanweg2dec1643
+        debug(("L290 pkhg 1644",number_of_intersections),1)
         if number_of_intersections == 0:
-            self.show_my_message("No intersections of guides available! Try again ;-) ")
+           
+            pattern_fill_choice = self.fill_q.get_active()
+            take_this_pattern = pdb.gimp_context_get_pattern()
+            s = self.pathoptions.get_active()
+            pdb.python_fu_plugin_simple_shapes_centered(self.img,\
+                            self.img.layers[0], True, s, False,0,0,0,0,False,
+                            10,10,10,10,  pattern_fill_choice,
+                             take_this_pattern, 0, (255,0,0), 10)
+            self.show_my_message("No intersections of guides available!\
+            \nNormal use of simple_shapes_centerded done!")
+
             return
         ellipse_or_rectangle = self.ellipse_or_rectangle.get_active()
-        #PKHG>TODO10oct
+        debug(("L295"),1)
         w = self.widthSpinButton.get_value()
         h = self.heightSpinButton.get_value()
-        #debug(("L229 h w",(h,w)))
+        #OK debug(("L298 h w",(h,w)),1)
 
         #self.pathoptions.set_active(25)
         s = self.pathoptions.get_active() #this is the simple shape chosen!
@@ -290,87 +316,136 @@ class Guidelabextra(object):
             s = 25
             
         pattern_fill = self.inselection_q.get_active()
-        #debug(("L233 def create_simple_pathes L230 s, pattern_fill", s, pattern_fill))
+        debug(("L307 def create_simple_pathes  s, pattern_fill", s, pattern_fill),1)
         drawable = self.img.layers[0]
         #random_or_not = self.pattern_checkyn.get_active()
         random_simple_shape = self.random_simple_shape.get_active()
         random_simple_pattern = self.random_simple_pattern.get_active()
-        debug(("L243 random_simple shape pattern", random_simple_shape, random_simple_pattern))
+        debug(("L312 ", random_simple_shape, random_simple_pattern),1)
+        debug(("L313 random_simple shape pattern", random_simple_shape, random_simple_pattern))
         num_patterns, pattern_list = pdb.gimp_patterns_get_list('')
-        count_shapes = 0 #randint(0,46)
+        use_this_shape = 0 #randint(0,46)
         pattern_fill_choice = self.fill_q.get_active()
         flatten_choice = self.flatten_image_q.get_active()
-        #debug(("L847 flatten_choice", flatten_choice))
-        
+        debug(("L318 flatten_choice", flatten_choice),1)
+
+         ###########????#############
+       
+        colums_first = []
         for x in vertical_guides:
             for y in horizontal_guides:
                 if x == drawable.width:
                     x = drawable.width - 1
                 if y == drawable.height:
                     y = drawable.height - 1
-                kreiseEllipse(self.img, x, y, w, h, operation= 2,
-                                  chosen_form = ellipse_or_rectangle)
-                if random_simple_pattern:
-                    #pattern_list = pattern_list[]
-                    num_patterns, pattern_list = pdb.gimp_patterns_get_list('')
-                    #PKHG>23nov selected items
-                    if self.selected_items == []:
-                        debug(("L297 NO items chosen",self.selected_items),1)
-                    elif len(self.selected_items_patterns) > 0:
-                        debug(("l299, selected items =", self.selected_items),1)
-                        pattern_list = [pattern_list[el] for el in self.selected_items_patterns]
-                        num_patterns = len(pattern_list)
-                    #else:
-                    #    debug(("L302 only one choice"),1)
-                    
-                    random_pattern = pattern_list[randint(0, num_patterns - 1)]
-                    debug(("L326 random pattern is ",len(pattern_list) == num_patterns, random_pattern),1)
-                    pdb.gimp_context_set_pattern(random_pattern)
-                    take_this_pattern = random_pattern
+                colums_first.append((x,y))
+        debug(("L330 colums_first= ", colums_first),1)
+        #rows_first_deque = deque(rows_first)
+        
+        rows_first = []
+        for y in horizontal_guides:
+            for x in vertical_guides:
+                if x == drawable.width:
+                    x = drawable.width - 1
+                if y == drawable.height:
+                    y = drawable.height - 1
+                rows_first.append((x,y))
+        debug(("L341 rows_first= ", rows_first),1)
+        ###########????#############
+        rowise = self.paint_colums_first.get_active()
+        debug(("L344 rowise = ", rowise),1)
+        colums_to_use = colums_first
+        if rowise:
+            colums_to_use = rows_first
+        debug(("L348 colums_to_use = ", colums_to_use),1)
+        for el in colums_to_use: #shapes into selections
+            x, y = el #PKHG>2dec_02 colums_first_deque[0]
+            debug(("L351 x y = ", x, y), 1) 
+            kreiseEllipse(self.img, x, y, w, h, operation= 2,\
+                              chosen_form = ellipse_or_rectangle)
+            debug(("L354 r._simple_pattern",random_simple_pattern),1)
+            if random_simple_pattern:
+                #pattern_list = pattern_list[]
+                num_patterns, pattern_list = pdb.gimp_patterns_get_list('')
                 
-                else:
-                    take_this_pattern = pdb.gimp_context_get_pattern()
-                    debug(("L252 take_this_pattern = ", take_this_pattern))
+                if self.selected_items == []:
+                    debug(("L360 NO pattern items chosen",self.selected_items),1)
+                elif len(self.selected_items_patterns) > 0:
+                    pattern_list = [pattern_list[el]
+                                    for el in self.selected_items_patterns]
+                    num_patterns = len(pattern_list)
+                    debug(("L365, pattern_list, num_p. =", pattern_list,
+                           num_patterns),1)
 
-                if random_simple_shape:
-                    debug(("L324 test simple random shapes",self.selected_items_shapes),1)
-                    if self.selected_items_shapes:
-                        nr_of_shapes = len(self.selected_items_shapes)
-                        if nr_of_shapes == 1:
-                            self.pathoptions.set_active(self.selected_items_shapes[0])
-                            count_shapes = self.selected_items_shapes[0]
+                #else:
+                   #debug(("L369 only one choice", num_patterns),1)
+                
+                random_pattern = pattern_list[randint(0, num_patterns - 1)]
+                #debug(("L372 random pattern is ", random_pattern),1)
+                #pdb.gimp_context_set_pattern(random_pattern)
+                take_this_pattern = random_pattern
+            
+            else:
+                take_this_pattern = pdb.gimp_context_get_pattern()
+                debug(("L378 take_this_pattern = ", take_this_pattern),1)
+                
+            if random_simple_shape:
+                debug(("L381 test simple random shapes",self.selected_items_shapes),1)
+                if len(self.selected_items_shapes) > 0:
+                    debug(("L383 1216",),1)
+                    nr_of_shapes = len(self.selected_items_shapes)
+                    if nr_of_shapes == 1:
+                        self.pathoptions.set_active(self.selected_items_shapes[0])
+                        use_this_shape = self.selected_items_shapes[0]
+                    else:
+                        #PKHG>2dec_01 to do warning if not possible!
+                        use_cyclic = self.cyclic_shapes.get_active()
+                        """
+                        if (not use_cyclic) and self.cyclic_shapes_deque == None:
+                            use_cylic = False
+                            self.show_my_message("you ask for cyclic shapes,\
+                            but you did not choose any ;-)")
+                        """
+                        debug(("L397 use_cyclic = ", use_cyclic),1)
+                        if use_cyclic:
+                             tmp = self.cyclic_shapes_deque[0]
+                             debug(("L400 tmp = ", tmp),1)
+                             use_this_shape = tmp
+                             self.cyclic_shapes_deque.rotate(-1)                                
                         else:
                             tmp = randint(0, nr_of_shapes - 1)
-                            count_shapes = self.selected_items_shapes[tmp]
-                    else:
-                        count_shapes = randint(0,46)
-                    debug(("L334 27nov  count_shapes", count_shapes),1)
-                    self.pathoptions.set_active(count_shapes)
-                    #count_shapes = pattern_list[randint(0,46)] #(1 + count_shapes) % 47
+                            use_this_shape = self.selected_items_shapes[tmp]
+                        debug(("L406 cyclic use_this_shape", use_cyclic, use_this_shape),1)
+                else:
+                    use_this_shape = randint(0,46)
+                debug(("L409 27nov  use_this_shape", use_this_shape),1)
+                self.pathoptions.set_active(use_this_shape)
+                #use_this_shape = pattern_list[randint(0,46)] #(1 + use_this_shape) % 47
 
                 s = self.pathoptions.get_active() #this is the simple shape chosen!
                 if s in no_pattern_list:
                     s = 25
 
+                debug(("L417 s = ", s), 1)
                 
-                #>> pdb.python_fu_plugin_simple_shapes_centered(image, drawable, sel (int in selection?),
-                #s = int which type of vectors,
-                #resize_1, R, L, T, B, resize_2, M_L, H_L, V_L, R_L, fill, fillpattern, stroke, strokecolor, strokewidth)
-                #PKHG>TODO M_L till R_L
-                #stroke  using svg or not now 0
-                #>>version 11-11 > pdb.python_fu_MareoQplugin_simple_shapes_centered(image,
-                #drawable, sel, s, resize_1, M_L, H_L, V_L, R_L, fill, fillpattern,
-                #H_B, V_B, stroke, strokecolor, strokewidth)
-
-
-                debug(("266 s = ", s))
-                
-                pdb.python_fu_plugin_simple_shapes_centered(self.img, drawable, True,s,
-                                                    False,0,0,0,0,False,10,10,10,10, pattern_fill_choice,
-                                                    take_this_pattern, 0, (255,0,0), 10)
+                pdb.python_fu_plugin_simple_shapes_centered(self.img,\
+                            drawable, True, s, False,0,0,0,0,False,
+                            10,10,10,10, pattern_fill_choice,
+                             take_this_pattern, 0, (255,0,0), 10)
                 if flatten_choice:
-                    drawable = pdb.gimp_image_flatten(self.img) #Flatten wohl oder nicht PKHG>TODO
-                    
+                    #Flatten if wanted
+                    drawable = pdb.gimp_image_flatten(self.img) 
+            else:
+                debug(("L427 reason why nothing"), 1)
+                pdb.python_fu_plugin_simple_shapes_centered(self.img,\
+                            drawable, True, s, False,0,0,0,0,False,
+                            10,10,10,10, pattern_fill_choice,
+                             take_this_pattern, 0, (255,0,0), 10)
+                if flatten_choice:
+                    #Flatten if wanted
+                    drawable = pdb.gimp_image_flatten(self.img) 
+
+            
         pdb.gimp_selection_none(self.img)
         
 ############## guides-to-path
@@ -552,7 +627,7 @@ class Guidelabextra(object):
         for n in range(0,len(ts)-1): ts[n][3]=int(ts[n+1][0])-int(ts[n][0])
         last=ts[len(ts)-1]
         last[3]=self.img.height-last[0] if name=="ts_h" else self.img.width-last[0]
-        #debug(("L506 printNext ts[0][0]", ts[0][0]), urgent = 1) #ts[0] is a TreeModelRow object, [:] impossible!
+        #debug(("L618 printNext ts[0][0]", ts[0][0]), urgent = 1) #ts[0] is a TreeModelRow object, [:] impossible!
         
     def delGuide(self, widget, row, col):
         tit=col.get_title()
@@ -650,7 +725,7 @@ class Guidelabextra(object):
         
     def pattern_def(self, widget, *data):
         #PKHG>DBG OK
-        gimp.message("L448" + str(data))
+        gimp.message("L716" + str(data))
         pdb.gimp_context_set_pattern(data[0]) #PKHG>Name of chosen pattern
         
     def call_plugin(self, widget):
@@ -663,13 +738,13 @@ class Guidelabextra(object):
             layer = image.layers[0]
             self.python_guides_to_path_pkhg(image, layer)
         elif name == "create_new_layer":
-            #debug("L491 TODO add new layer")
+            #debug("L729 TODO add new layer")
             layer_new = pdb.gimp_layer_new(self.img, self.img.width, self.img.height, 1, 'new layer', 100, 0)
             pdb.gimp_image_add_layer(self.img, layer_new, 0)
         elif name == "fill_q":
             gimp.message("TODO activate fill_q")
         elif name == "pattern_select_button":
-            gimp.message("L458 name = " + name)
+            gimp.message("L735 name = " + name)
         elif name == "stroke_guides":
             active_vectors = pdb.gimp_image_get_active_vectors(image)
             if active_vectors:
@@ -876,11 +951,12 @@ class Guidelabextra(object):
 
             #PKHG>Simple path layout
             row = 0
+            simple_path_tab = 3
             self.ui.addRows(gtk.Label("Size used, use 'Paint stuff' \
                         others here:Parameters of Use for 'Simple paths centured' 1.0 beta "),
-                        self.tabs[3], 0, 4, row, row + 1)
+                        self.tabs[simple_path_tab], 0, 4, row, row + 1)
             row += 1
-            self.ui.addRows(gtk.Label("choose:"), self.tabs[3], 0, 1, row, row + 1)
+            self.ui.addRows(gtk.Label("choose:"), self.tabs[simple_path_tab], 0, 1, row, row + 1)
             self.pathoptions = self.ui.addRows(self.ui.makeCombo(
 [
     ['Arrow',0],['Axis of symmetry',1],['Binoculars',2],['Circle',3],
@@ -899,61 +975,68 @@ class Guidelabextra(object):
 ['Star pentagons',40],['Triangle equilateral',41],['Triangle isosceles',42],
 ['Triangle Reuleaux',43],['Trefoil',44],['Yin-Yang',45],
 ['Wilber',46]
-]),self.tabs[3], 1, 2, row, row + 1)
+]),self.tabs[simple_path_tab], 1, 2, row, row + 1)
 
             #not with pattern no_pattern_list = [1, 6, 13, 14, 36]
-            #self.ui.addRows(gtk.Label("In selection?"), self.tabs[3], 2, 3, row, row + 1)
+            #self.ui.addRows(gtk.Label("In selection?"), self.tabs[simple_path_tab], 2, 3, row, row + 1)
             self.inselection_q = gtk.CheckButton("in selection(s) y/n?!")
-            self.ui.addRows(self.inselection_q, self.tabs[3], 3, 4, row, row + 1, 'clicked', self.call_plugin)
+            self.ui.addRows(self.inselection_q, self.tabs[simple_path_tab], 3, 4, row, row + 1, 'clicked', self.call_plugin)
 
             row += 1
-            self.ui.addRows(gtk.Label("Resize layer?"), self.tabs[3], 0, 1, row, row + 1)
+            self.ui.addRows(gtk.Label("Resize layer?"), self.tabs[simple_path_tab], 0, 1, row, row + 1)
             self.resize_q = gtk.CheckButton("y/n")
-            self.ui.addRows(self.resize_q, self.tabs[3], 1, 2, row, row + 1, 'clicked', self.call_plugin)
-            self.ui.addRows(gtk.Label("Resize all layers to image size?"), self.tabs[3], 2, 3, row, row + 1)
+            self.ui.addRows(self.resize_q, self.tabs[simple_path_tab], 1, 2, row, row + 1, 'clicked', self.call_plugin)
+            self.ui.addRows(gtk.Label("Resize all layers to image size?"), self.tabs[simple_path_tab], 2, 3, row, row + 1)
             self.resize_all_q = gtk.CheckButton("y/n")
-            self.ui.addRows(self.resize_all_q, self.tabs[3], 3, 4, row, row + 1, 'clicked', self.call_plugin)
+            self.ui.addRows(self.resize_all_q, self.tabs[simple_path_tab], 3, 4, row, row + 1, 'clicked', self.call_plugin)
             
             row += 1
-            self.ui.addRows(gtk.Label("from right (pix)"), self.tabs[3], 0, 1, row, row + 1)
-            self.ui.addRows(gtk.Label("from left (pix)"), self.tabs[3], 1, 2, row, row + 1)
-            self.ui.addRows(gtk.Label("from top (pix)"), self.tabs[3], 2, 3, row, row + 1)
-            self.ui.addRows(gtk.Label("from bottom (pix)"), self.tabs[3], 3, 4, row, row + 1)
+            self.ui.addRows(gtk.Label("from right (pix)"), self.tabs[simple_path_tab], 0, 1, row, row + 1)
+            self.ui.addRows(gtk.Label("from left (pix)"), self.tabs[simple_path_tab], 1, 2, row, row + 1)
+            self.ui.addRows(gtk.Label("from top (pix)"), self.tabs[simple_path_tab], 2, 3, row, row + 1)
+            self.ui.addRows(gtk.Label("from bottom (pix)"), self.tabs[simple_path_tab], 3, 4, row, row + 1)
             row += 1
             self.resize_left = gtk.SpinButton(gtk.Adjustment(10, -100, 100, 5), 0.0, 0)
             self.resize_left.set_name('resize_left')
-            r1 = self.ui.addRows(self.resize_left, self.tabs[3], 0, 1, row, row+1,"activate", self.evalSpin)
+            r1 = self.ui.addRows(self.resize_left, self.tabs[simple_path_tab], 0, 1, row, row+1,"activate", self.evalSpin)
             self.resize_right = gtk.SpinButton(gtk.Adjustment(10, -100, 100, 5), 0.0, 0)
             self.resize_right.set_name('resize_right')
-            r1 = self.ui.addRows(self.resize_right, self.tabs[3], 1, 2, row, row+1,"activate", self.evalSpin)
+            r1 = self.ui.addRows(self.resize_right, self.tabs[simple_path_tab], 1, 2, row, row+1,"activate", self.evalSpin)
             self.resize_top = gtk.SpinButton(gtk.Adjustment(10, -100, 100, 5), 0.0, 0)
             self.resize_top.set_name('resize_top')
-            r1 = self.ui.addRows(self.resize_top, self.tabs[3], 2, 3, row, row+1,"activate", self.evalSpin)
+            r1 = self.ui.addRows(self.resize_top, self.tabs[simple_path_tab], 2, 3, row, row+1,"activate", self.evalSpin)
             self.resize_bottom = gtk.SpinButton(gtk.Adjustment(10, -100, 100, 5), 0.0, 0)
             self.resize_bottom.set_name('resize_bottom')
-            r1 = self.ui.addRows(self.resize_bottom, self.tabs[3], 3, 4, row, row+1,"activate", self.evalSpin)
+            r1 = self.ui.addRows(self.resize_bottom, self.tabs[simple_path_tab], 3, 4, row, row+1,"activate", self.evalSpin)
             row += 1  #gimpui ... for 
-            #self.pattern_select  = self.ui.addRows(self.PatternSelector, self.tabs[3], 0, 1, row, row + 1)
-            #self.ui.addRows(gtk.Label("pattern fill?"), self.tabs[3], 0, 1, row, row + 1)
+            #self.pattern_select  = self.ui.addRows(self.PatternSelector, self.tabs[simple_path_tab], 0, 1, row, row + 1)
+            #self.ui.addRows(gtk.Label("pattern fill?"), self.tabs[simple_path_tab], 0, 1, row, row + 1)
             self.flatten_image_q = gtk.CheckButton("FLATTEN image?")
-            self.ui.addRows(self.flatten_image_q, self.tabs[3], 0, 1, row, row + 1)
+            self.ui.addRows(self.flatten_image_q, self.tabs[simple_path_tab], 0, 1, row, row + 1)
             self.fill_q = gtk.CheckButton("pattern fill?")
             self.fill_q.set_name("fill_q")
-            self.ui.addRows(self.fill_q, self.tabs[3], 1, 2, row, row + 1)
+            self.ui.addRows(self.fill_q, self.tabs[simple_path_tab], 1, 2, row, row + 1)
             #PKHG>no general OK!!, 'clicked', self.call_plugin)
+            self.random_simple_pattern = gtk.CheckButton("random pattern for Simple shape?")
+            self.ui.addRows(self.random_simple_pattern, self.tabs[simple_path_tab], 2, 3,
+                            row, row + 1)            
             self.pattern_select_button = _gimpui.PatternSelectButton()
             #PKHG>works ;-) gimp.message(str(dir(self.pattern_select_button)))
-            self.rpattern = self.ui.addRows(self.pattern_select_button, self.tabs[3], 2, 3,
+            self.rpattern = self.ui.addRows(self.pattern_select_button,
+                                            self.tabs[simple_path_tab], 3, 4,
                                             row, row + 1,"pattern_set", self.pattern_def)
             row += 1
             self.random_simple_shape = gtk.CheckButton("random Simple shape?")
-            self.ui.addRows(self.random_simple_shape, self.tabs[3], 0, 1, row, row + 1)
-            self.random_simple_pattern = gtk.CheckButton("random pattern for Simple shape?")
-            self.ui.addRows(self.random_simple_pattern, self.tabs[3], 1, 2, row, row + 1)
-
+            self.ui.addRows(self.random_simple_shape, self.tabs[simple_path_tab], 0, 1, row, row + 1)
+           
+            self.cyclic_shapes = gtk.CheckButton("use selected shapes cyclic")
+            self.ui.addRows(self.cyclic_shapes, self.tabs[simple_path_tab], 1, 2, row, row + 1)
+            self.paint_colums_first = gtk.CheckButton("paint rowise")
+            self.ui.addRows(self.paint_colums_first, self.tabs[simple_path_tab], 2, 3, row, row + 1)
+            
             row += 1 
             final_simple_path_centered = gtk.Button("OK: do now!")
-            self.ui.addRows(final_simple_path_centered, self.tabs[3], 0, 4 , row, row + 1, 'clicked', self.create_simple_pathes)
+            self.ui.addRows(final_simple_path_centered, self.tabs[simple_path_tab], 0, 4 , row, row + 1, 'clicked', self.create_simple_pathes)
 
 ################# please change here ##################
             row = 0
@@ -974,33 +1057,32 @@ class Guidelabextra(object):
         global horizontal_guides, vertical_guides
         
         self.img = gimp.image_list()[-1]
-        debug("L1007 createellipses called", 1)
         horizontal_guides = []
         for n in self.tsH:
             horizontal_guides.append((n[0]))
         vertical_guides = []
         for n in self.tsV:
             vertical_guides.append(n[0])
-        debug(("L1013 should be done"))
+        debug(("L1054 should be done"))
         number_of_intersections = len(horizontal_guides) * len(vertical_guides)
-        debug(("L1014 number of intersections", number_of_intersections))
+        
         ellipse_or_rectangle = self.ellipse_or_rectangle.get_active()
         if ellipse_or_rectangle == 0:
             ellipse_or_rectangle = 'ellipse'
         else:
             ellipse_or_rectangle = 'rectangle'
-        debug(("L1020 ellipse_or_rectangle ", ellipse_or_rectangle),1)
+        debug(("L1062 ellipse_or_rectangle ", ellipse_or_rectangle),1)
         #debug((vertical_guides, horizontal_guides))
         if number_of_intersections == 0:
             self.show_my_message("no guide-intersection yet available")
             return
         #PKHG>premature end of this def, if no intersections available ;-( !!
         ftypes = ['no', 'fg color', 'centercolor', 'pattern', 'kacheln'] #PKHG>31oct pay attention!
-        debug(("L1028 createellipses"))
+        debug(("L1069 createellipses"))
         tmp = self.selection_type.get_active()
         debug(("1028 active filltype" , tmp))      
         filltype = ftypes[int(self.selection_type.get_active())]
-        debug(("L1032 filltype werd ", filltype))
+        debug(("L1073 filltype werd ", filltype))
         w = self.widthSpinButton.get_value()
         h = self.heightSpinButton.get_value()
         if filltype == 'no':
@@ -1011,7 +1093,7 @@ class Guidelabextra(object):
         elif filltype == 'fg color' or filltype == 'centercolor':
             drawable = self.img.layers[0]
             random_chosen = self.pattern_checkyn.get_active() #not good: self.fill_q.get_active()
-            debug(("L826 filltype random_chosen", filltype, random_chosen))            
+            debug(("L1084 filltype random_chosen", filltype, random_chosen))            
             for x in vertical_guides:
                 for y in horizontal_guides:
                     if x == drawable.width:
@@ -1025,20 +1107,20 @@ class Guidelabextra(object):
                         #PKHH>orig num_channels, color = pdb.gimp_drawable_get_pixel(drawable, x, y)
                         num_channels, color = pdb.gimp_drawable_get_pixel(self.img.layers[-1], x, y)
                         #debug(("center color",color," tel",tel))
-                        debug(("L840 x y = centercolor",x,y, color))
+                        debug(("L1098 x y = centercolor",x,y, color))
                     else:
-                        debug(("L842 no center_color",random_chosen))
+                        debug(("L1100 no center_color",random_chosen))
                         if random_chosen:
                             color = random_rgb()
                         else:
                             color = pdb.gimp_context_get_foreground()
-                    debug(("L845 random or not filltype",random_chosen,filltype))
+                    debug(("L1105 random or not filltype",random_chosen,filltype))
                     pdb.gimp_context_set_foreground(color)
-                    debug(("L831 color=", color))
+                    debug(("L1107 color=", color))
                     #pdb.gimp_edit_bucket_fill_full(drawable, fill_mode = 0 =foregroundcolor,
                     #paint_mode, opacity, threshold, sample_merged, fill_transparent, select_criterion, x, )
                     pdb.gimp_edit_bucket_fill_full(drawable, 0, 0, 100, 128, False, False, 0, x, y)
-                    debug(("L822 random colors"))
+                    debug(("L1111 random colors"))
                     pdb.gimp_drawable_update(drawable,0,0,drawable.width,drawable.height)
                     pdb.gimp_displays_flush()
                     
@@ -1063,20 +1145,18 @@ class Guidelabextra(object):
                     if random_or_not:
                         #pattern_list = pattern_list[]
                         random_pattern = pattern_list[randint(0, num_patterns - 1)]
-                        debug(("L867 random pattern is ",len(pattern_list) == num_patterns, random_pattern))
+                        debug(("L1136 random pattern is ",len(pattern_list) == num_patterns, random_pattern))
                         pdb.gimp_context_set_pattern(random_pattern)
                         take_this_pattern = random_pattern
                     else:
                         take_this_pattern = pdb.gimp_context_get_pattern()
-                        #debug(("L872 take_this_pattern = ", take_this_pattern))
+                        #debug(("L1141 take_this_pattern = ", take_this_pattern))
 
                     pdb.gimp_edit_bucket_fill_full(drawable, 2, 0, 100, 128, False, False, 0, x, y)
                     pdb.gimp_drawable_update(drawable,0,0,drawable.width,drawable.height)
                     pdb.gimp_displays_flush()
             pdb.gimp_selection_none(self.img)
-            #return
-            #TODO
-            #return
+ 
         elif filltype == 'kacheln':
             available_pictures = gimp.image_list()
             tile_bilder = [el.name for el in available_pictures if el.name.startswith('tile')]
@@ -1100,15 +1180,15 @@ class Guidelabextra(object):
                 for i in range(4):
                     tmp = pdb.gimp_file_load(doen[i], chosen_names[i])
                     pdb.gimp_display_new(tmp)
-                debug("L837 kacheln als bilder geladen")
+                debug("L1171 kacheln als bilder geladen")
             else:
-                debug("L820 kacheln sind schon als bilder geladen")
-            debug("L894 Kacheln checken")
+                debug("L1173 kacheln sind schon als bilder geladen")
+            debug("L1174 Kacheln checken")
             waar = "c:/Users/Peter/.gimp-2.8/patterns/"
             num_patterns, pattern_list = pdb.gimp_patterns_get_list('tile')
             #on 9 nov by PKHG ('alpha-tile_1', 'alpha-tile_1 #1', 'tile_1', 'tile_2', 'tile_3', 'tile_4')
             chosen_names = pattern_list[2:] #PKHG>TODO 9october 
-            debug(("L910 Kacheln kacheln= ",chosen_names))
+            debug(("L1179 Kacheln kacheln= ",chosen_names))
             drawable = self.img.layers[0]
             for x in vertical_guides:
                 for y in horizontal_guides:
@@ -1140,7 +1220,7 @@ class Guidelabextra(object):
         self.table.show()
         self.nB = gtk.Notebook()
         self.ui.addRows(self.nB, self.table, 0, 1, 0, 1)
-        #DBG gdk titel layout gimp.message("L408 Anzahl tabTits %2d" % (len(self.tabTits)))
+        #DBG gdk titel layout gimp.message("L1211 Anzahl tabTits %2d" % (len(self.tabTits)))
         for n in range(0, len(self.tabTits)):
             if n < 4:
                 t = gtk.Table(6, 2, False)
@@ -1296,3 +1376,32 @@ if __name__ == '__main__':
 
 
 
+"""
+Command: last-kbd-macro
+Key: none
+
+Macro:
+
+ESC
+C-s			;; isearch-forward
+L[0-9]+			;; self-insert-command * 7
+RET			;; newline
+ESC
+:(insert		;; self-insert-command * 8
+SPC			;; self-insert-command
+(what-line))		;; self-insert-command * 12
+RET			;; newline
+C-r			;; isearch-backward
+L			;; self-insert-command
+C-r			;; isearch-backward
+RET			;; newline
+ESC
+d			;; self-insert-command
+C-d			;; delete-char
+L			;; self-insert-command
+
+
+(fset 'renumberLlabels
+   (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item (quote ([escape 19 76 91 48 45 57 93 43 return escape 58 40 105 110 115 101 114 116 32 42 119 104 97 116 45 108 105 110 101 41 backspace backspace backspace backspace backspace backspace backspace backspace backspace backspace backspace 40 119 104 97 116 45 108 105 110 101 41 41 return 18 76 18 return escape 100 4 76] 0 "%d")) arg)))
+
+"""
