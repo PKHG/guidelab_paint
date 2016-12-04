@@ -22,4 +22,4 @@ Layout of the UI is and will be changed.
 
 On the way ... 22 nov 2016
 
-a lot is done ;-) . A sort of usermanual will be added soon.
+a lot is done ;-) 4 dec 2015 . A sort of usermanual will be added soon.
