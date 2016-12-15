@@ -60,6 +60,7 @@ from gimpfu import *
 #           Add shapes "Gear", "Star" Polygon" created by Jonathan Stipe 2004-2006(necessary script-fu Shape-path.scm)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #==============================================================================================================================================================================
+#Small changes by PKHG 15 dec 2016
 def color_to_hex(color):
 	whole_color = (color[0],color[1],color[2]);
 	return '#%02x%02x%02x' % whole_color
@@ -106,16 +107,20 @@ def vector_to_line_stroke(image, vector, layer, color="#000000", width=1, capsty
 def newline(x1, y1, x2, y2):
     return [x1,y1]*3+[x2,y2]*3
 
-def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L, H_L, V_L, R_L, fill, fillpattern, stroke, strokecolor, strokewidth):
+def plugin_simple_shapes_centered(image, layer, sel, s, R_1, R, L, T, B,
+         R_2, M_L, H_L, V_L, R_L, fill, fillpattern, stroke, strokecolor, strokewidth):
 
 	pdb.gimp_image_undo_group_start(image)
 	pdb.gimp_context_push()
 	before_vectors = list(image.vectors)
 	selection = pdb.gimp_selection_bounds(image)
+        """
 	x1 = selection[1];
 	y1 = selection[2];
 	x2 = selection[3];
 	y2 = selection[4];
+        """
+        x1, y1, x2, y2 = selection[1:]
 	
 	if sel:
 		temp = pdb.gimp_selection_save(image)
@@ -154,62 +159,64 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 			v = (H1-W1)/2
 			W = W1
 			H = W1
-
+        Wd8 = W / 8
 	if s==0: # Arrow
 
 		new_vectors = pdb.gimp_vectors_new(image,"Arrow >")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 84,
-		(5*W/8 +m, W/8 +v,5*W/8 +m, W/8 +v,5*W/8 +m, W/8 +v,   5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,5*W/8 +m,3*W/8 +v,
-		5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,5*W/8 +m,3*W/8 +v,   m,3*W/8 +v,m,3*W/8 +v,m,3*W/8 +v,
-		m,3*W/8 +v, m,3*W/8 +v, m,3*W/8 +v,   m,5*W/8 +v, m,5*W/8 +v, m,5*W/8 +v,
-		m,5*W/8 +v, m,5*W/8 +v, m,5*W/8 +v,   5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v,
-		5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v,  5*W/8 +m,7*W/8 +v, 5*W/8 +m,7*W/8 +v,5*W/8 +m,7*W/8 +v,
-		5*W/8 +m,7*W/8 +v, 5*W/8 +m,7*W/8 +v,5*W/8 +m,7*W/8 +v,   W +m,W/2 +v,W +m,W/2 +v,W +m,W/2 +v,
-		W +m,W/2 +v,W +m,W/2 +v,W +m,W/2 +v,   5*W/8 +m, W/8 +v,5*W/8 +m, W/8 +v,5*W/8 +m, W/8 +v), 0)
+		(5*Wd8 +m, Wd8 +v,5*Wd8 +m, Wd8 +v,5*Wd8 +m, Wd8 +v,   5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,5*Wd8 +m,3*Wd8 +v,
+		5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,5*Wd8 +m,3*Wd8 +v,   m,3*Wd8 +v,m,3*Wd8 +v,m,3*Wd8 +v,
+		m,3*Wd8 +v, m,3*Wd8 +v, m,3*Wd8 +v,   m,5*Wd8 +v, m,5*Wd8 +v, m,5*Wd8 +v,
+		m,5*Wd8 +v, m,5*Wd8 +v, m,5*Wd8 +v,   5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v,
+		5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v,  5*Wd8 +m,7*Wd8 +v, 5*Wd8 +m,7*Wd8 +v,5*Wd8 +m,7*Wd8 +v,
+		5*Wd8 +m,7*Wd8 +v, 5*Wd8 +m,7*Wd8 +v,5*Wd8 +m,7*Wd8 +v,   W +m,W/2 +v,W +m,W/2 +v,W +m,W/2 +v,
+		W +m,W/2 +v,W +m,W/2 +v,W +m,W/2 +v,   5*Wd8 +m, Wd8 +v,5*Wd8 +m, Wd8 +v,5*Wd8 +m, Wd8 +v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Arrow ^")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 84,
-		(W/2 +m, v,W/2 +m, v,W/2 +m, v,    W/8 +m,3*W/8 +v, W/8 +m,3*W/8 +v,W/8 +m,3*W/8 +v,
-		W/8 +m,3*W/8 +v, W/8 +m,3*W/8 +v,W/8 +m,3*W/8 +v,  3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,
-		3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,  3*W/8+m,W+v,3*W/8+m,W+v,3*W/8+m,W+v,
-		3*W/8+m,W+v,3*W/8+m,W+v,3*W/8+m,W+v,  5*W/8 +m,W +v, 5*W/8 +m,W +v,5*W/8 +m,W +v,
-		5*W/8 +m,W +v, 5*W/8 +m,W +v,5*W/8 +m,W +v,  5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,5*W/8 +m,3*W/8 +v,
-		5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,5*W/8 +m,3*W/8 +v,  7*W/8 +m,3*W/8 +v,7*W/8 +m,3*W/8 +v,7*W/8 +m,3*W/8 +v,
-		7*W/8 +m,3*W/8 +v,7*W/8 +m,3*W/8 +v,7*W/8 +m,3*W/8 +v,  W/2 +m, v,W/2 +m, v,W/2 +m, v,), 0)
+		(W/2 +m, v,W/2 +m, v,W/2 +m, v,    Wd8 +m,3*Wd8 +v, Wd8 +m,3*Wd8 +v,Wd8 +m,3*Wd8 +v,
+		Wd8 +m,3*Wd8 +v, Wd8 +m,3*Wd8 +v,Wd8 +m,3*Wd8 +v,  3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,
+		3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,  3*Wd8+m,W+v,3*Wd8+m,W+v,3*Wd8+m,W+v,
+		3*Wd8+m,W+v,3*Wd8+m,W+v,3*Wd8+m,W+v,  5*Wd8 +m,W +v, 5*Wd8 +m,W +v,5*Wd8 +m,W +v,
+		5*Wd8 +m,W +v, 5*Wd8 +m,W +v,5*Wd8 +m,W +v,  5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,5*Wd8 +m,3*Wd8 +v,
+		5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,5*Wd8 +m,3*Wd8 +v,  7*Wd8 +m,3*Wd8 +v,7*Wd8 +m,3*Wd8 +v,7*Wd8 +m,3*Wd8 +v,
+		7*Wd8 +m,3*Wd8 +v,7*Wd8 +m,3*Wd8 +v,7*Wd8 +m,3*Wd8 +v,  W/2 +m, v,W/2 +m, v,W/2 +m, v,), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Arrow <")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 84,
-		(3*W/8 +m,W/8 +v,3*W/8 +m,W/8 +v,3*W/8 +m,W/8 +v,   m, W/2+v,m, W/2+v,m, W/2+v,
-		m, W/2+v,m, W/2+v,m, W/2+v,    3*W/8 +m, 7*W/8 +v, 3*W/8 +m, 7*W/8 +v, 3*W/8 +m, 7*W/8 +v, 
-		3*W/8 +m, 7*W/8 +v, 3*W/8 +m, 7*W/8 +v,   3*W/8 +m, 5*W/8 +v,3*W/8 +m, 5*W/8 +v,3*W/8 +m, 5*W/8 +v,
-		3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v,   W+m, 5*W/8 +v,W+m, 5*W/8 +v,W+m, 5*W/8 +v,
-		W+m, 5*W/8 +v,W+m, 5*W/8 +v,W+m, 5*W/8 +v,   W+m, 3*W/8 +v,W+m, 3*W/8 +v,W+m, 3*W/8 +v,
-		W+m, 3*W/8 +v,W+m, 3*W/8 +v,W+m, 3*W/8 +v,  3*W/8 +m,3*W/8 +v, 3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,
-		3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v, 3*W/8 +m,W/8 +v,3*W/8 +m,W/8 +v,3*W/8 +m,W/8 +v,), 0)
+		(3*Wd8 +m,Wd8 +v,3*Wd8 +m,Wd8 +v,3*Wd8 +m,Wd8 +v,   m, W/2+v,m, W/2+v,m, W/2+v,
+		m, W/2+v,m, W/2+v,m, W/2+v,    3*Wd8 +m, 7*Wd8 +v, 3*Wd8 +m, 7*Wd8 +v, 3*Wd8 +m, 7*Wd8 +v, 
+		3*Wd8 +m, 7*Wd8 +v, 3*Wd8 +m, 7*Wd8 +v,   3*Wd8 +m, 5*Wd8 +v,3*Wd8 +m, 5*Wd8 +v,3*Wd8 +m, 5*Wd8 +v,
+		3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v,   W+m, 5*Wd8 +v,W+m, 5*Wd8 +v,W+m, 5*Wd8 +v,
+		W+m, 5*Wd8 +v,W+m, 5*Wd8 +v,W+m, 5*Wd8 +v,   W+m, 3*Wd8 +v,W+m, 3*Wd8 +v,W+m, 3*Wd8 +v,
+		W+m, 3*Wd8 +v,W+m, 3*Wd8 +v,W+m, 3*Wd8 +v,  3*Wd8 +m,3*Wd8 +v, 3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,
+		3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v, 3*Wd8 +m,Wd8 +v,3*Wd8 +m,Wd8 +v,3*Wd8 +m,Wd8 +v,), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Arrow v")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 84,
-		(3*W/8 +m,v, 3*W/8 +m,v, 3*W/8 +m,v,   3*W/8 +m,5*W/8 +v,3*W/8 +m,5*W/8 +v,3*W/8 +m,5*W/8 +v,
-		3*W/8 +m,5*W/8 +v,3*W/8 +m,5*W/8 +v,3*W/8 +m,5*W/8 +v,   W/8 +m,5*W/8 +v,W/8 +m,5*W/8 +v,W/8 +m,5*W/8 +v,
-		W/8 +m,5*W/8 +v,W/8 +m,5*W/8 +v,W/8 +m,5*W/8 +v,     W/2 +m,W +v, W/2 +m,W +v, W/2 +m,W +v, 
-		W/2 +m,W +v, W/2 +m,W +v, W/2 +m,W +v,  7*W/8 +m,5*W/8 +v, 7*W/8 +m,5*W/8 +v, 7*W/8 +m,5*W/8 +v, 
-		7*W/8 +m,5*W/8 +v, 7*W/8 +m,5*W/8 +v,7*W/8 +m,5*W/8 +v,  5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,
-		5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,   5*W/8 +m,v,5*W/8 +m,v,5*W/8 +m,v,
-		5*W/8 +m,v,5*W/8 +m,v,5*W/8 +m,v,   3*W/8 +m,v, 3*W/8 +m,v,3*W/8 +m,v), 0)
+		(3*Wd8 +m,v, 3*Wd8 +m,v, 3*Wd8 +m,v,   3*Wd8 +m,5*Wd8 +v,3*Wd8 +m,5*Wd8 +v,3*Wd8 +m,5*Wd8 +v,
+		3*Wd8 +m,5*Wd8 +v,3*Wd8 +m,5*Wd8 +v,3*Wd8 +m,5*Wd8 +v,   Wd8 +m,5*Wd8 +v,Wd8 +m,5*Wd8 +v,Wd8 +m,5*Wd8 +v,
+		Wd8 +m,5*Wd8 +v,Wd8 +m,5*Wd8 +v,Wd8 +m,5*Wd8 +v,     W/2 +m,W +v, W/2 +m,W +v, W/2 +m,W +v, 
+		W/2 +m,W +v, W/2 +m,W +v, W/2 +m,W +v,  7*Wd8 +m,5*Wd8 +v, 7*Wd8 +m,5*Wd8 +v, 7*Wd8 +m,5*Wd8 +v, 
+		7*Wd8 +m,5*Wd8 +v, 7*Wd8 +m,5*Wd8 +v,7*Wd8 +m,5*Wd8 +v,  5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,
+		5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,   5*Wd8 +m,v,5*Wd8 +m,v,5*Wd8 +m,v,
+		5*Wd8 +m,v,5*Wd8 +m,v,5*Wd8 +m,v,   3*Wd8 +m,v, 3*Wd8 +m,v,3*Wd8 +m,v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 	if s==1: # Axis of symmetry
 		new_vectors = pdb.gimp_vectors_new(image,"Axis of symmetry")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 12, newline(W1/2, k, W1/2, H1-k), 0)
-		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 12, newline(j, H1/2, W1-j, H1/2), 0)
+		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 12,
+                                        newline(W1/2, k, W1/2, H1-k), 0)
+		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 12,
+                                        newline(j, H1/2, W1-j, H1/2), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 	if s==2: # Binoculars
@@ -265,8 +272,8 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 	if s==4: # Crescent
 
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_ellipse(image, 0, W/8+m ,v ,W ,W)
-		pdb.gimp_image_select_ellipse(image,1, W/2+m, W/16+v, 7*W/8, 7*H/8)
+		pdb.gimp_image_select_ellipse(image, 0, Wd8+m ,v ,W ,W)
+		pdb.gimp_image_select_ellipse(image,1, W/2+m, W/16+v, 7*Wd8, 7*H/8)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -279,18 +286,18 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		new_vectors = pdb.gimp_vectors_new(image,"Cross")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 144,
-		(3*W/8 +m, v, 3*W/8 +m, v, 3*W/8 +m, v,    3*W/8 +m,3*W/8 +v, 3*W/8 +m,3*W/8 +v, 3*W/8 +m,3*W/8 +v,
-		3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,3*W/8 +m,3*W/8 +v,     m,3*W/8 +v, m,3*W/8 +v, m,3*W/8 +v,
-		m,3*W/8 +v, m,3*W/8 +v, m,3*W/8 +v,    m,5*W/8 +v, m,5*W/8 +v, m,5*W/8 +v,
-		m,5*W/8 +v, m,5*W/8 +v, m,5*W/8 +v,   3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v,
-		3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v, 3*W/8 +m,5*W/8 +v,   3*W/8 +m,W +v, 3*W/8 +m,W +v, 3*W/8 +m,W +v,
-		3*W/8 +m,W +v, 3*W/8 +m,W +v, 3*W/8 +m,W +v,   5*W/8 +m,W +v, 5*W/8 +m,W +v, 5*W/8 +m,W +v,
-		5*W/8 +m,W +v, 5*W/8 +m,W +v, 5*W/8 +m,W +v,   5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,5*W/8 +m,5*W/8 +v,
-		5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v, 5*W/8 +m,5*W/8 +v,   W+m, 5*W/8+v, W+m, 5*W/8+v, W+m, 5*W/8+v,
-		W+m, 5*W/8+v, W+m, 5*W/8+v, W+m, 5*W/8+v,    W+m, 3*W/8+v, W+m, 3*W/8+v, W+m, 3*W/8+v,
-		W+m, 3*W/8+v, W+m, 3*W/8+v, W+m, 3*W/8+v,  5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,
-		5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v, 5*W/8 +m,3*W/8 +v,   5*W/8 +m,v, 5*W/8 +m,v, 5*W/8 +m,v,
-		5*W/8 +m,v, 5*W/8 +m,v, 5*W/8 +m,v,   3*W/8 +m, v, 3*W/8 +m, v, 3*W/8 +m, v), 0)
+		(3*Wd8 +m, v, 3*Wd8 +m, v, 3*Wd8 +m, v,    3*Wd8 +m,3*Wd8 +v, 3*Wd8 +m,3*Wd8 +v, 3*Wd8 +m,3*Wd8 +v,
+		3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,3*Wd8 +m,3*Wd8 +v,     m,3*Wd8 +v, m,3*Wd8 +v, m,3*Wd8 +v,
+		m,3*Wd8 +v, m,3*Wd8 +v, m,3*Wd8 +v,    m,5*Wd8 +v, m,5*Wd8 +v, m,5*Wd8 +v,
+		m,5*Wd8 +v, m,5*Wd8 +v, m,5*Wd8 +v,   3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v,
+		3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v, 3*Wd8 +m,5*Wd8 +v,   3*Wd8 +m,W +v, 3*Wd8 +m,W +v, 3*Wd8 +m,W +v,
+		3*Wd8 +m,W +v, 3*Wd8 +m,W +v, 3*Wd8 +m,W +v,   5*Wd8 +m,W +v, 5*Wd8 +m,W +v, 5*Wd8 +m,W +v,
+		5*Wd8 +m,W +v, 5*Wd8 +m,W +v, 5*Wd8 +m,W +v,   5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,5*Wd8 +m,5*Wd8 +v,
+		5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v, 5*Wd8 +m,5*Wd8 +v,   W+m, 5*Wd8+v, W+m, 5*Wd8+v, W+m, 5*Wd8+v,
+		W+m, 5*Wd8+v, W+m, 5*Wd8+v, W+m, 5*Wd8+v,    W+m, 3*Wd8+v, W+m, 3*Wd8+v, W+m, 3*Wd8+v,
+		W+m, 3*Wd8+v, W+m, 3*Wd8+v, W+m, 3*Wd8+v,  5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,
+		5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v, 5*Wd8 +m,3*Wd8 +v,   5*Wd8 +m,v, 5*Wd8 +m,v, 5*Wd8 +m,v,
+		5*Wd8 +m,v, 5*Wd8 +m,v, 5*Wd8 +m,v,   3*Wd8 +m, v, 3*Wd8 +m, v, 3*Wd8 +m, v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 	if s==6: # Diagonals
@@ -578,7 +585,7 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		b = 3*W/(8*math.tan(math.pi/6))
 		
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 10, (3*W/8+m,v,   m, b+v,    W/8+m,7*W/8+v,  5*W/8 +m, v,  3*W/8+m,v ))
+		pdb.gimp_image_select_polygon(image, 0, 10, (3*Wd8+m,v,   m, b+v,    Wd8+m,7*Wd8+v,  5*Wd8 +m, v,  3*Wd8+m,v ))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -586,7 +593,7 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Mobius band_1")
 		
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 10, (7*W/8+m,7*W/8+v, 3*W/8+m,v, 5*W/8+m,v, W+m, b+v, 7*W/8+m,7*W/8+v))
+		pdb.gimp_image_select_polygon(image, 0, 10, (7*Wd8+m,7*Wd8+v, 3*Wd8+m,v, 5*Wd8+m,v, W+m, b+v, 7*Wd8+m,7*Wd8+v))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -594,7 +601,7 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Mobius band_2")
 		
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 10, (m, b+v,  W/8+m,7*W/8+v,  7*W/8+m,7*W/8+v, W+m, b+v, m, b+v))
+		pdb.gimp_image_select_polygon(image, 0, 10, (m, b+v,  Wd8+m,7*Wd8+v,  7*Wd8+m,7*Wd8+v, W+m, b+v, m, b+v))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -603,7 +610,7 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		pdb.gimp_selection_none(image)
 		
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 10, (3*W/8+m,v,   m, b+v,    W/4+m,b+v,  5*W/8 +m, v,  3*W/8+m,v ))
+		pdb.gimp_image_select_polygon(image, 0, 10, (3*Wd8+m,v,   m, b+v,    W/4+m,b+v,  5*Wd8 +m, v,  3*Wd8+m,v ))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -715,20 +722,21 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Petal_4")
 		pdb.gimp_selection_none(image)
 		
-	if s==20: # Pie 1/2
+	if s==20: # Pie 1/2 PKHG>5de creates 4 half circles 
 	
 		pdb.gimp_selection_none(image)
 		pdb.gimp_image_select_ellipse(image, 0, m ,v ,W ,W)
-		pdb.gimp_image_select_rectangle(image,3, W/2+m, v, W/2, H)
+		pdb.gimp_image_select_rectangle(image,3, W/2+m, v, W/2, H/2)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
 		active_vectors.name = active_vectors.name.replace("Selection", "Pie_1/2_1")
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Pie_1/2_1")
-		
+
 		pdb.gimp_selection_none(image)
+                gimp.message("m v W" +str(m) + " " + str(v) + " " + str(W))
 		pdb.gimp_image_select_ellipse(image, 0, m ,v ,W ,W)
-		pdb.gimp_image_select_rectangle(image,3, m, W/2+v, W, H/2)
+		pdb.gimp_image_select_rectangle(image,3, m + W/2 , W/2+v, W/2, H/2)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -737,22 +745,22 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		
 		pdb.gimp_selection_none(image)
 		pdb.gimp_image_select_ellipse(image, 0, m ,v ,W ,W)
-		pdb.gimp_image_select_rectangle(image,3, m, v, W/2, H)
+		pdb.gimp_image_select_rectangle(image,3, m, H/2 + v, W/2, H/2)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
 		active_vectors.name = active_vectors.name.replace("Selection", "Pie_1/2_3")
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Pie_1/2_3")
-
+                
 		pdb.gimp_selection_none(image)
 		pdb.gimp_image_select_ellipse(image, 0, m ,v ,W ,W)
-		pdb.gimp_image_select_rectangle(image,3, m, v, W, H/2)
+		pdb.gimp_image_select_rectangle(image,3, m,  v, W/2, H/2)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
 		active_vectors.name = active_vectors.name.replace("Selection", "Pie_1/2_4")
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Pie_1/2_4")		
-
+                
 	if s==21: # Pie 3/4 - 1/4
 	
 		pdb.gimp_selection_none(image)
@@ -981,15 +989,15 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		new_vectors = pdb.gimp_vectors_new(image,"Clubs")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 54,
-		(6*W/8 +m,-5*W/64+v, 6*W/8+m,2*W/8+v, 6*W/8+m,-5*W/64+v,
-		2*W/8+m,-5*W/64+v,  2*W/8+m,2*W/8+v, -5*W/64+m,2*W/8+v,
-		-5*W/64+m,6*W/8+v,  2*W/8+m,6*W/8+v,  3*W/8+m, 6*W/8+v,
-		7*W/16+m,11*W/16+v,  W/2+m-W/80,5*W/8+v,  W/2+m,7*W/8+v,
-		3*W/8+m,W+v, W/8+m,W+v, 3*W/8+m,W+v,
-		5*W/8+m,W+v, 7*W/8+m,W+v, 5*W/8+m,W+v,
-		W/2+m,7*W/8+v, W/2+m+W/80,5*W/8+v, 9*W/16+m,11*W/16+v,
-		5*W/8+m,6*W/8+v, 6*W/8+m, 6*W/8+v, 69*W/64+m,6*W/8+v,
-		 69*W/64+m,2*W/8+v,  6*W/8+m,2*W/8+v,  6*W/8+m,2*W/8+v), 0)
+		(6*Wd8 +m,-5*W/64+v, 6*Wd8+m,2*Wd8+v, 6*Wd8+m,-5*W/64+v,
+		2*Wd8+m,-5*W/64+v,  2*Wd8+m,2*Wd8+v, -5*W/64+m,2*Wd8+v,
+		-5*W/64+m,6*Wd8+v,  2*Wd8+m,6*Wd8+v,  3*Wd8+m, 6*Wd8+v,
+		7*W/16+m,11*W/16+v,  W/2+m-Wd8,5*Wd8+v,  W/2+m,7*Wd8+v,
+		3*Wd8+m,W+v, Wd8+m,W+v, 3*Wd8+m,W+v,
+		5*Wd8+m,W+v, 7*Wd8+m,W+v, 5*Wd8+m,W+v,
+		W/2+m,7*Wd8+v, W/2+m+Wd8,5*Wd8+v, 9*W/16+m,11*W/16+v,
+		5*Wd8+m,6*Wd8+v, 6*Wd8+m, 6*Wd8+v, 69*W/64+m,6*Wd8+v,
+		 69*W/64+m,2*Wd8+v,  6*Wd8+m,2*Wd8+v,  6*Wd8+m,2*Wd8+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 	if s==24: # Playing cards Diamonds
@@ -997,11 +1005,11 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		new_vectors = pdb.gimp_vectors_new(image,"Diamonds")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 30,
-		( m+W/2,v+W/8, m+W/2,v, m+W/2,v+W/8,
+		( m+W/2,v+Wd8, m+W/2,v, m+W/2,v+Wd8,
 		m+H/8,v+H/2, m,v+H/2, m+H/8,v+H/2, 
-		m+W/2,v+7*W/8, m+W/2,v+H, m+W/2,v+7*W/8,
+		m+W/2,v+7*Wd8, m+W/2,v+H, m+W/2,v+7*Wd8,
 		m+7*H/8,v+H/2, m+H,v+H/2, m+7*H/8,v+H/2,
-		m+W/2,v+W/8, m+W/2,v, m+W/2,v+W/8), 0)
+		m+W/2,v+Wd8, m+W/2,v, m+W/2,v+Wd8), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 	if s==25: # Playing cards Hearts
@@ -1011,7 +1019,7 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 30,
 		( W/2+m,-W/10+v,  W/2+m,W/4+1+v,  W/2+m,-W/10+v,
 		m, -W/16+v, m,W/4+v,  m,W/2+v,
-		3*W/8+m,5*W/8+v,  W/2+m,W+v,  5*W/8+m,5*W/8+v,
+		3*Wd8+m,5*Wd8+v,  W/2+m,W+v,  5*Wd8+m,5*Wd8+v,
 		W+m, W/2+v, W+m,W/4+v,  W+m,-W/16+v,
 		W/2+m,-W/10+v,  W/2+m,W/4+1+v,  W/2+m,-W/10+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
@@ -1021,14 +1029,14 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		new_vectors = pdb.gimp_vectors_new(image,"Spades")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 48,
-		( 5*W/8+m, 2*W/8+v,  W/2+m,v,  3*W/8+m, 2*W/8+v,
-		m,2*W/8+v,  m,W/2+v,  m,6*W/8+v,
-		2*W/8+m, 7*W/8+v, W/2+m-W/100,5*W/8+v,  W/2+m,7*W/8+v,
-		3*W/8+m, W+v,  W/8+m,W+v,  3*W/8+m, W+v,
-		5*W/8+m, W+v,  7*W/8+m,W+v,  5*W/8+m, W+v,
-		W/2+m, 7*W/8+v, W/2+m+W/100,5*W/8+v,  6*W/8+m, 7*W/8+v,
-		W+m,6*W/8+v,  W+m,W/2+v,  W+m,2*W/8+v,
-		5*W/8+m, 2*W/8+v,  W/2+m,v,  3*W/8+m, 2*W/8+v), 0)
+		( 5*Wd8+m, 2*Wd8+v,  W/2+m,v,  3*Wd8+m, 2*Wd8+v,
+		m,2*Wd8+v,  m,W/2+v,  m,6*Wd8+v,
+		2*Wd8+m, 7*Wd8+v, W/2+m-W/100,5*Wd8+v,  W/2+m,7*Wd8+v,
+		3*Wd8+m, W+v,  Wd8+m,W+v,  3*Wd8+m, W+v,
+		5*Wd8+m, W+v,  7*Wd8+m,W+v,  5*Wd8+m, W+v,
+		W/2+m, 7*Wd8+v, W/2+m+W/100,5*Wd8+v,  6*Wd8+m, 7*Wd8+v,
+		W+m,6*Wd8+v,  W+m,W/2+v,  W+m,2*Wd8+v,
+		5*Wd8+m, 2*Wd8+v,  W/2+m,v,  3*Wd8+m, 2*Wd8+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 	if s==27: # POLYGON
@@ -1274,8 +1282,8 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		pdb.gimp_image_select_rectangle(image,0, W/2 +m, v, W/2, W)
 		pdb.gimp_image_select_ellipse(image, 3, m ,v ,W ,W)
 		pdb.gimp_image_select_ellipse(image, 1, W/4+m ,W/4+v ,W/2 ,W/2)
-		pdb.gimp_image_select_polygon(image, 1, 10, (5*W/8 + m, 5*W/8 + v,  W/2 + m, 5*W/8 + v,  W/2 +m, W+v, 6*W/8 +m, W+v,  5*W/8+m, 5*W/8+v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (5*W/8 + m, 5*W/8 + v,  W/2 + m, 7*W/8 + v,  6*W/8 +m, W+v,  5*W/8+m, 5*W/8+v))
+		pdb.gimp_image_select_polygon(image, 1, 10, (5*Wd8 + m, 5*Wd8 + v,  W/2 + m, 5*Wd8 + v,  W/2 +m, W+v, 6*Wd8 +m, W+v,  5*Wd8+m, 5*Wd8+v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (5*Wd8 + m, 5*Wd8 + v,  W/2 + m, 7*Wd8 + v,  6*Wd8 +m, W+v,  5*Wd8+m, 5*Wd8+v))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1287,8 +1295,8 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		pdb.gimp_image_select_rectangle(image,0, m, v, W/2, W)
 		pdb.gimp_image_select_ellipse(image, 3, m ,v ,W ,W)
 		pdb.gimp_image_select_ellipse(image, 1, W/4+m ,W/4+v ,W/2 ,W/2)
-		pdb.gimp_image_select_polygon(image, 1, 10, (W/4 + m,v, 3*W/8+ m, 3*W/8 + v,  W/2 +m, 3*W/8+v, W/2 +m, v,  W/4 + m,v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/4 + m, v,  3*W/8 + m, 3*W/8 + v,  W/2 +m, W/8+v,  W/4 + m, v,))
+		pdb.gimp_image_select_polygon(image, 1, 10, (W/4 + m,v, 3*Wd8+ m, 3*Wd8 + v,  W/2 +m, 3*Wd8+v, W/2 +m, v,  W/4 + m,v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/4 + m, v,  3*Wd8 + m, 3*Wd8 + v,  W/2 +m, Wd8+v,  W/4 + m, v,))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1350,10 +1358,10 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 	if s==35: # Roses compass
 
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m,v,  3*W/8+m,3*W/8+v, W/2+m, W/2+v, W/2+m,v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (m, W/2+v, 3*W/8+m, 5*W/8+v, W/2+m, W/2+v, m, W/2+v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, W/2+m, W+v, 5*W/8 +m, 5*W/8 +v,W/2+m, W/2+v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, W+m, W/2+v, 5*W/8 +m, 3*W/8 +v, W/2+m, W/2+v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m,v,  3*Wd8+m,3*Wd8+v, W/2+m, W/2+v, W/2+m,v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (m, W/2+v, 3*Wd8+m, 5*Wd8+v, W/2+m, W/2+v, m, W/2+v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, W/2+m, W+v, 5*Wd8 +m, 5*Wd8 +v,W/2+m, W/2+v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, W+m, W/2+v, 5*Wd8 +m, 3*Wd8 +v, W/2+m, W/2+v))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1362,10 +1370,10 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		pdb.gimp_selection_none(image)
 		
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m,v, W/2+m,W/2 +v, 5*W/8+m,3*W/8+v, W/2+m,v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (3*W/8+m,3*W/8+v, m, W/2+v, W/2+m, W/2+v, 3*W/8+m,3*W/8+v))
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, 3*W/8+m,5*W/8+v, W/2+m, W+v, W/2+m, W/2+v,))
-		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, 5*W/8 +m, 5*W/8 +v, W+m, W/2+v,  W/2+m, W/2+v,))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m,v, W/2+m,W/2 +v, 5*Wd8+m,3*Wd8+v, W/2+m,v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (3*Wd8+m,3*Wd8+v, m, W/2+v, W/2+m, W/2+v, 3*Wd8+m,3*Wd8+v))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, 3*Wd8+m,5*Wd8+v, W/2+m, W+v, W/2+m, W/2+v,))
+		pdb.gimp_image_select_polygon(image, 0, 8, (W/2+m, W/2+v, 5*Wd8 +m, 5*Wd8 +v, W+m, W/2+v,  W/2+m, W/2+v,))
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1549,10 +1557,20 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 
 		new_vectors = pdb.gimp_vectors_new(image,"Triangle equilateral")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
+                res = 	(W/2+m,v, W/2+m,v, W/2+m,v,
+                         W/2 + e+m,d+v,  W/2 + e+m,d+v, W/2 + e+m,d+v,
+		         W/2-e+m, d+v, W/2-e+m, d+v, W/2-e+m, d+v,
+                         W/2+m, v, W/2+m, v, W/2+m, v,
+                         W/2+m, v, W/2+m, v, W/2+m, v,
+                         W/2+m, v, W/2+m, v, W/2+m, v,
+                         )
+                pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 36, res,0 )
+                """ 
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 36, 
 		(W/2+m,v, W/2+m,v, W/2+m,v,  W/2 + e+m,d+v,  W/2 + e+m,d+v, W/2 + e+m,d+v,
-		W/2 +e+m, d+v, W/2 +e+m, d+v, W/2 +e+m, d+v,    W/2 -e+m, d+v, W/2 -e+m, d+v, W/2- e+m, d+v,
+		W/2 +e+m, d+v, W/2 +e+m, d+v, W/2 +e+m, d+v, W/2 -e+m, d+v, W/2 -e+m, d+v, W/2- e+m, d+v,
 		W/2-e+m, d+v, W/2-e+m, d+v, W/2-e+m, d+v,   W/2+m, v, W/2+m, v, W/2+m, v ), 0)
+                """
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 	if s==42: # Triangle isosceles
@@ -1579,9 +1597,9 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 	if s==44: # Trefoil
 
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_ellipse(image, 0, 3*W/16+m ,v ,5*W/8 ,5*W/8)
-		pdb.gimp_image_select_ellipse(image, 0, m ,3*W/8+v ,5*W/8 ,5*W/8)
-		pdb.gimp_image_select_ellipse(image, 0, 3*W/8+m ,3*W/8+v ,5*W/8 ,5*W/8)
+		pdb.gimp_image_select_ellipse(image, 0, 3*W/16+m ,v ,5*Wd8 ,5*Wd8)
+		pdb.gimp_image_select_ellipse(image, 0, m ,3*Wd8+v ,5*Wd8 ,5*Wd8)
+		pdb.gimp_image_select_ellipse(image, 0, 3*Wd8+m ,3*Wd8+v ,5*Wd8 ,5*Wd8)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1608,14 +1626,14 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 		active_vectors.visible = True
 		active_vectors.name = active_vectors.name.replace("Selection", "Yin")
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Yin")
-		pdb.gimp_image_select_ellipse(image, 0, 7*W/16+m, 3*W/16+v, W/8, H/8)
+		pdb.gimp_image_select_ellipse(image, 0, 7*W/16+m, 3*W/16+v, Wd8, H/8)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
 		active_vectors.name = active_vectors.name.replace("Selection", "Eye Yang")
 		active_vectors.name = active_vectors.name.replace("Zaznaczenie", "Oko Yang")
 		pdb.gimp_selection_none(image)
-		pdb.gimp_image_select_ellipse(image, 0, 7*W/16+m, 11*W/16+v, W/8, H/8)
+		pdb.gimp_image_select_ellipse(image, 0, 7*W/16+m, 11*W/16+v, Wd8, H/8)
 		pdb.plug_in_sel2path(image, layer, run_mode=RUN_NONINTERACTIVE)
 		active_vectors = pdb.gimp_image_get_active_vectors(image)
 		active_vectors.visible = True
@@ -1627,83 +1645,84 @@ def plugin_simple_shapes_centered(image, layer, sel,s, R_1, R, L, T, B, R_2, M_L
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-01-head outline")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
+                Wd100 = W / 100
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 156,(
-		25*W/100+m, 30*W/100+v, 30*W/100+m, 40*W/100+v, 30*W/100+m, 40*W/100+v,     18*W/100+m, 11*W/100+v, 24*W/100+m, 18*W/100+v, 27*W/100+m, 21*W/100+v,
-		24*W/100+m, 18*W/100+v, 24*W/100+m, 18*W/100+v, 27*W/100+m, 21*W/100+v,     35*W/100+m, 31*W/100+v, 44*W/100+m, 35*W/100+v, 44*W/100+m, 35*W/100+v,
-		44*W/100+m, 35*W/100+v, 44*W/100+m, 35*W/100+v, 54*W/100+m, 39*W/100+v,     60*W/100+m, 39*W/100+v, 69*W/100+m, 36*W/100+v, 69*W/100+m, 36*W/100+v,
-		69*W/100+m, 36*W/100+v, 69*W/100+m, 36*W/100+v, 78*W/100+m, 33*W/100+v,     90*W/100+m, 25*W/100+v, 95*W/100+m, 13*W/100+v, 95*W/100+m, 13*W/100+v,
-		95*W/100+m, 13*W/100+v, 95*W/100+m, 13*W/100+v, 96*W/100+m, 10*W/100+v,     98*W/100+m, 18*W/100+v, 97*W/100+m, 29*W/100+v, 97*W/100+m, 29*W/100+v,
-		97*W/100+m, 29*W/100+v, 97*W/100+m, 29*W/100+v, 96*W/100+m, 40*W/100+v,     90*W/100+m, 46*W/100+v, 81*W/100+m, 52*W/100+v, 81*W/100+m, 52*W/100+v,
-		81*W/100+m, 52*W/100+v, 81*W/100+m, 52*W/100+v, 79*W/100+m, 65*W/100+v,     69*W/100+m, 75*W/100+v,  54*W/100+m, 76*W/100+v,  54*W/100+m, 76*W/100+v,
-		54*W/100+m, 76*W/100+v, 54*W/100+m, 76*W/100+v, 60*W/100+m, 73*W/100+v,     62*W/100+m, 70*W/100+v, 63*W/100+m, 67*W/100+v,  63*W/100+m, 67*W/100+v,
-		63*W/100+m, 67*W/100+v, 63*W/100+m, 67*W/100+v,  64*W/100+m, 63*W/100+v,    63*W/100+m, 62*W/100+v,  61*W/100+m, 60*W/100+v,  61*W/100+m, 60*W/100+v,
-		61*W/100+m, 60*W/100+v,  61*W/100+m, 60*W/100+v,  58*W/100+m, 69*W/100+v,   37*W/100+m, 74*W/100+v,  27*W/100+m, 72*W/100+v, 27*W/100+m, 72*W/100+v,
-		27*W/100+m, 72*W/100+v, 27*W/100+m, 72*W/100+v, 24*W/100+m, 72*W/100+v,     18*W/100+m, 70*W/100+v, 18*W/100+m, 70*W/100+v, 18*W/100+m, 70*W/100+v,
-		18*W/100+m, 70*W/100+v, 18*W/100+m, 70*W/100+v, 26*W/100+m, 66*W/100+v,     26.5*W/100+m, 57*W/100+v, 21*W/100+m, 49*W/100+v, 21*W/100+m, 49*W/100+v,
-		21*W/100+m, 49*W/100+v, 21*W/100+m, 49*W/100+v, 21*W/100+m, 49*W/100+v,     23*W/100+m, 47*W/100+v, 23*W/100+m, 47*W/100+v, 23*W/100+m, 47*W/100+v		), 0)
+		25*Wd100+m, 30*Wd100+v, 30*Wd100+m, 40*Wd100+v, 30*Wd100+m, 40*Wd100+v,     18*Wd100+m, 11*Wd100+v, 24*Wd100+m, 18*Wd100+v, 27*Wd100+m, 21*Wd100+v,
+		24*Wd100+m, 18*Wd100+v, 24*Wd100+m, 18*Wd100+v, 27*Wd100+m, 21*Wd100+v,     35*Wd100+m, 31*Wd100+v, 44*Wd100+m, 35*Wd100+v, 44*Wd100+m, 35*Wd100+v,
+		44*Wd100+m, 35*Wd100+v, 44*Wd100+m, 35*Wd100+v, 54*Wd100+m, 39*Wd100+v,     60*Wd100+m, 39*Wd100+v, 69*Wd100+m, 36*Wd100+v, 69*Wd100+m, 36*Wd100+v,
+		69*Wd100+m, 36*Wd100+v, 69*Wd100+m, 36*W/100+v, 78*Wd100+m, 33*Wd100+v,     90*Wd100+m, 25*Wd100+v, 95*Wd100+m, 13*Wd100+v, 95*Wd100+m, 13*Wd100+v,
+		95*Wd100+m, 13*Wd100+v, 95*Wd100+m, 13*Wd100+v, 96*Wd100+m, 10*Wd100+v,     98*Wd100+m, 18*Wd100+v, 97*Wd100+m, 29*Wd100+v, 97*Wd100+m, 29*Wd100+v,
+		97*Wd100+m, 29*Wd100+v, 97*Wd100+m, 29*Wd100+v, 96*Wd100+m, 40*Wd100+v,     90*Wd100+m, 46*Wd100+v, 81*Wd100+m, 52*Wd100+v, 81*Wd100+m, 52*Wd100+v,
+		81*Wd100+m, 52*Wd100+v, 81*Wd100+m, 52*Wd100+v, 79*Wd100+m, 65*Wd100+v,     69*Wd100+m, 75*Wd100+v,  54*Wd100+m, 76*Wd100+v,  54*Wd100+m, 76*Wd100+v,
+		54*Wd100+m, 76*Wd100+v, 54*Wd100+m, 76*Wd100+v, 60*Wd100+m, 73*Wd100+v,     62*Wd100+m, 70*Wd100+v, 63*Wd100+m, 67*Wd100+v,  63*Wd100+m, 67*Wd100+v,
+		63*Wd100+m, 67*Wd100+v, 63*Wd100+m, 67*Wd100+v,  64*Wd100+m, 63*Wd100+v,    63*Wd100+m, 62*Wd100+v,  61*Wd100+m, 60*Wd100+v,  61*Wd100+m, 60*Wd100+v,
+		61*Wd100+m, 60*Wd100+v,  61*Wd100+m, 60*Wd100+v,  58*Wd100+m, 69*Wd100+v,   37*Wd100+m, 74*Wd100+v,  27*Wd100+m, 72*Wd100+v, 27*Wd100+m, 72*Wd100+v,
+		27*Wd100+m, 72*Wd100+v, 27*Wd100+m, 72*Wd100+v, 24*Wd100+m, 72*Wd100+v,     18*Wd100+m, 70*Wd100+v, 18*Wd100+m, 70*Wd100+v, 18*Wd100+m, 70*Wd100+v,
+		18*Wd100+m, 70*Wd100+v, 18*Wd100+m, 70*Wd100+v, 26*Wd100+m, 66*Wd100+v,     26.5*Wd100+m, 57*Wd100+v, 21*Wd100+m, 49*Wd100+v, 21*Wd100+m, 49*Wd100+v,
+		21*Wd100+m, 49*Wd100+v, 21*Wd100+m, 49*Wd100+v, 21*Wd100+m, 49*Wd100+v,     23*Wd100+m, 47*Wd100+v, 23*Wd100+m, 47*Wd100+v, 23*Wd100+m, 47*Wd100+v		), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-02-left eye")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,30*W/100+m ,47*W/100+v ,7*W/100 ,7*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,30*Wd100+m ,47*Wd100+v ,7*Wd100 ,7*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-03-left eye pupil")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,31*W/100+m ,49*W/100+v ,4*W/100 ,4*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,31*Wd100+m ,49*Wd100+v ,4*Wd100 ,4*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-04-left eye pupil highlight")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,30*W/100+m ,48*W/100+v ,2*W/100 ,2*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,30*Wd100+m ,48*Wd100+v ,2*Wd100 ,2*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-05-mouth")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 48,(
-		54*W/100+m, 76*W/100+v, 54*W/100+m, 76*W/100+v, 60*W/100+m, 73*W/100+v,     62*W/100+m, 70*W/100+v, 63*W/100+m, 67*W/100+v,  63*W/100+m, 67*W/100+v,
-		63*W/100+m, 67*W/100+v, 63*W/100+m, 67*W/100+v,  64*W/100+m, 63*W/100+v,    63*W/100+m, 62*W/100+v,  61*W/100+m, 60*W/100+v,  61*W/100+m, 60*W/100+v,
-		61*W/100+m, 60*W/100+v,  61*W/100+m, 60*W/100+v,  58*W/100+m, 69*W/100+v,   38*W/100+m, 74*W/100+v, 27*W/100+m, 72*W/100+v, 27*W/100+m, 72*W/100+v,
-		27*W/100+m, 72*W/100+v,  27*W/100+m, 72*W/100+v, 34*W/100+m, 75*W/100+v,    46*W/100+m, 78*W/100+v, 54*W/100+m, 76*W/100+v, 60*W/100+m, 73*W/100+v), 0)
+		54*Wd100+m, 76*Wd100+v, 54*Wd100+m, 76*Wd100+v, 60*Wd100+m, 73*Wd100+v,     62*Wd100+m, 70*Wd100+v, 63*Wd100+m, 67*Wd100+v,  63*Wd100+m, 67*Wd100+v,
+		63*Wd100+m, 67*Wd100+v, 63*Wd100+m, 67*Wd100+v,  64*Wd100+m, 63*Wd100+v,    63*Wd100+m, 62*Wd100+v,  61*Wd100+m, 60*Wd100+v,  61*Wd100+m, 60*Wd100+v,
+		61*Wd100+m, 60*Wd100+v,  61*Wd100+m, 60*Wd100+v,  58*Wd100+m, 69*Wd100+v,   38*Wd100+m, 74*Wd100+v, 27*Wd100+m, 72*Wd100+v, 27*Wd100+m, 72*Wd100+v,
+		27*Wd100+m, 72*Wd100+v,  27*Wd100+m, 72*Wd100+v, 34*Wd100+m, 75*Wd100+v,    46*Wd100+m, 78*Wd100+v, 54*Wd100+m, 76*Wd100+v, 60*Wd100+m, 73*Wd100+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-06-nose")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 48,(
-		4*W/100+m, 46*W/100+v, 10*W/100+m, 44*W/100+v, 16*W/100+m, 43*W/100+v,       21*W/100+m, 47*W/100+v, 24*W/100+m, 55*W/100+v, 24*W/100+m, 55*W/100+v,
-		24*W/100+m, 55*W/100+v, 24*W/100+m, 55*W/100+v, 26*W/100+m, 62*W/100+v,   	 23*W/100+m, 68*W/100+v, 18*W/100+m, 70*W/100+v, 18*W/100+m, 70*W/100+v,
-		18*W/100+m, 70*W/100+v,18*W/100+m, 70*W/100+v, 12*W/100+m, 71*W/100+v,       6*W/100+m,67*W/100+v, 4*W/100+m,60*W/100+v,  4*W/100+m, 60*W/100+v,
-		4*W/100+m,60*W/100+v,4*W/100+m,60*W/100+v, W/100+m, 52*W/100+v,   4*W/100+m, 46*W/100+v,  10*W/100+m, 44*W/100+v,  17*W/100+m, 43*W/100+v), 0)
+		4*Wd100+m, 46*Wd100+v, 10*Wd100+m, 44*Wd100+v, 16*Wd100+m, 43*Wd100+v,       21*Wd100+m, 47*Wd100+v, 24*Wd100+m, 55*Wd100+v, 24*Wd100+m, 55*Wd100+v,
+		24*Wd100+m, 55*Wd100+v, 24*Wd100+m, 55*Wd100+v, 26*Wd100+m, 62*Wd100+v,   	 23*Wd100+m, 68*Wd100+v, 18*Wd100+m, 70*Wd100+v, 18*Wd100+m, 70*Wd100+v,
+		18*Wd100+m, 70*Wd100+v,18*Wd100+m, 70*Wd100+v, 12*Wd100+m, 71*Wd100+v,       6*Wd100+m,67*Wd100+v, 4*Wd100+m,60*Wd100+v,  4*Wd100+m, 60*Wd100+v,
+		4*Wd100+m,60*Wd100+v,4*Wd100+m,60*Wd100+v, Wd100+m, 52*Wd100+v,   4*Wd100+m, 46*Wd100+v,  10*Wd100+m, 44*Wd100+v,  17*Wd100+m, 43*Wd100+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)		
 		
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-07-nose highlight")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,11*W/100+m ,51*W/100+v ,4*W/100 ,5*W/100, 15)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,11*Wd100+m ,51*Wd100+v ,4*Wd100 ,5*Wd100, 15)
 		pdb.gimp_item_set_visible(new_vectors, True)		
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-08-right eye")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,47*W/100+m ,48*W/100+v ,10*W/100 ,10*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,47*Wd100+m ,48*Wd100+v ,10*Wd100 ,10*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-09-right eye pupil")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,49*W/100+m ,51*W/100+v ,5*W/100 ,5*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,49*Wd100+m ,51*Wd100+v ,5*Wd100 ,5*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-10-right eye pupil highlight")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
-		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,48*W/100+m ,50*W/100+v ,2*W/100 ,2*W/100, 0)
+		pdb.gimp_vectors_bezier_stroke_new_ellipse(new_vectors ,48*Wd100+m ,50*Wd100+v ,2*Wd100 ,2*Wd100, 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 
 		new_vectors = pdb.gimp_vectors_new(image,"Wilber-11-shadow")
 		pdb.gimp_image_insert_vectors(image, new_vectors, None, -1)
 		pdb.gimp_vectors_stroke_new_from_points(new_vectors, 0, 60,(
-		95*W/100+m, 13*W/100+v, 95*W/100+m, 13*W/100+v, 96*W/100+m, 10*W/100+v,   98*W/100+m, 18*W/100+v, 97*W/100+m, 29*W/100+v, 97*W/100+m, 29*W/100+v,
-		97*W/100+m, 29*W/100+v, 97*W/100+m, 29*W/100+v, 96*W/100+m, 40*W/100+v,   90*W/100+m, 46*W/100+v, 81*W/100+m, 52*W/100+v, 81*W/100+m, 52*W/100+v,
-		81*W/100+m, 52*W/100+v, 81*W/100+m, 52*W/100+v, 79*W/100+m, 65*W/100+v,   69*W/100+m, 75*W/100+v,  54*W/100+m, 76*W/100+v,  54*W/100+m, 76*W/100+v,
-		54*W/100+m, 76*W/100+v, 54*W/100+m, 76*W/100+v, 67*W/100+m, 76*W/100+v,   79*W/100+m, 63*W/100+v,77*W/100+m, 49*W/100+v,77*W/100+m, 49*W/100+v,
-		77*W/100+m, 49*W/100+v,77*W/100+m, 49*W/100+v,95*W/100+m, 41*W/100+v,     95*W/100+m, 13*W/100+v, 95*W/100+m, 13*W/100+v, 96*W/100+m, 10*W/100+v), 0)
+		95*Wd100+m, 13*Wd100+v, 95*Wd100+m, 13*Wd100+v, 96*Wd100+m, 10*Wd100+v,   98*Wd100+m, 18*Wd100+v, 97*Wd100+m, 29*Wd100+v, 97*Wd100+m, 29*Wd100+v,
+		97*Wd100+m, 29*Wd100+v, 97*Wd100+m, 29*Wd100+v, 96*Wd100+m, 40*Wd100+v,   90*Wd100+m, 46*Wd100+v, 81*Wd100+m, 52*Wd100+v, 81*Wd100+m, 52*Wd100+v,
+		81*Wd100+m, 52*Wd100+v, 81*Wd100+m, 52*Wd100+v, 79*Wd100+m, 65*Wd100+v,   69*Wd100+m, 75*Wd100+v,  54*Wd100+m, 76*Wd100+v,  54*Wd100+m, 76*Wd100+v,
+		54*Wd100+m, 76*Wd100+v, 54*Wd100+m, 76*Wd100+v, 67*Wd100+m, 76*Wd100+v,   79*Wd100+m, 63*Wd100+v,77*Wd100+m, 49*Wd100+v,77*Wd100+m, 49*Wd100+v,
+		77*Wd100+m, 49*Wd100+v,77*Wd100+m, 49*Wd100+v,95*Wd100+m, 41*Wd100+v,     95*Wd100+m, 13*Wd100+v, 95*Wd100+m, 13*Wd100+v, 96*Wd100+m, 10*Wd100+v), 0)
 		pdb.gimp_item_set_visible(new_vectors, True)
 		
 
@@ -1823,7 +1842,7 @@ register(
 		 "Pie 1/2 [Paths:4]",															#20
 		 "Pie 1/4 [Paths:4+4]",        													#21
 		 "Pie 1/8 [Paths:8+8]",        													#22
-		 "Playing cards: Clubs",														#23
+		 "Playing cards: Clusb",														#23
 		 "Playing cards: Diamonds",														#24
 		 "Playing cards: Hearts",														#25
 		 "Playing cards: Spades",														#26
