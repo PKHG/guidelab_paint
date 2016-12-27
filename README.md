@@ -23,3 +23,8 @@ Layout of the UI is and will be changed.
 On the way ... 22 nov 2016
 
 a lot is done ;-) 4 dec 2015 . A sort of usermanual will be added soon.
+
+27 dec. 2016, a lot of work has been done, latest addition is managing the history of guides: save, view, delete
+
+A lot of work still waits ... (e.g. sometimes the plugin seems not to work, reason yet unknown: remedy: save picture and restart Gimp)
+Help of use is a TODO@
