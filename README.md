@@ -1,4 +1,21 @@
-# Gimp window as checker bord (Dammen-bord) later more explanation
+# Gimp window as checker bord (Dammen-bord) 
+You need dammenblack.pat, dammenwhite.pat (put them in you local pattern directory from Gimp)
+the Startpage (*.xcf) an empty bord but with the numbering (for starters ;-) )
+the plugin: Dam28oct2019.py the plugin (put in into the Gimp readable plug-ins directory)
+
+After loading the startpage (xcf for Gimp) there shoul be a TAB: GTK ==> TEST ==> Dam30oct19 
+stat will start the GTK checker interface.
+First of all activate the setup-mode an ad black stones (click black) inputline 1-20 and insert
+white (click white) 31-50 in the input line and insert
+
+That should deliver a standard checker bord filled with all stones
+
+Now goto game-mode and and find out if I made all things ok or if errors, let me know!
+
+Look in the Dam*.py which directories you may have to create to use save pictures resp. save
+your moves ..
+## More explanations will be made ...
+
 # guidelab_paint
 A repository for my guidelab extended with paint methods
 Reason: the very nice Arakne guidelab was for me not complete: missed to create several guides at once.
