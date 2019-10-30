@@ -1,3 +1,4 @@
+# Gimp window as checker bord (Dammen-bord) later more explanation
 # guidelab_paint
 A repository for my guidelab extended with paint methods
 Reason: the very nice Arakne guidelab was for me not complete: missed to create several guides at once.
