@@ -12,6 +12,9 @@ That should deliver a standard checker bord filled with all stones
 
 Now goto game-mode and and find out if I made all things ok or if errors, let me know!
 
+## old pat files will be removed
+use:   Dam_*.pat files 
+
 Look in the Dam*.py which directories you may have to create to use save pictures resp. save
 your moves ..
 ## More explanations will be made ...
